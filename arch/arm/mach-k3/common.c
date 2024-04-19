@@ -24,6 +24,7 @@
 #include <asm/io.h>
 #include <fs_loader.h>
 #include <fs.h>
+#include <efi_loader.h>
 #include <env.h>
 #include <elf.h>
 #include <soc.h>
@@ -270,6 +271,17 @@ int misc_init_r(void)
 			printf("Failed to probe am65_cpsw_nuss driver\n");
 	}
 
+	if (IS_ENABLED(CONFIG_TI_ICSSG_PRUETH)) {
+		struct udevice *dev;
+		int ret;
+
+		ret = uclass_get_device_by_driver(UCLASS_MISC,
+						  DM_DRIVER_GET(prueth),
+						  &dev);
+		if (ret)
+			printf("Failed to probe prueth driver\n");
+	}
+
 	/* Default FIT boot on HS-SE devices */
 	if (get_device_type() == K3_DEVICE_TYPE_HS_SE)
 		env_set("boot_fit", "1");
@@ -296,3 +308,14 @@ void setup_qos(void)
 		writel(qos_data[i].val, (uintptr_t)qos_data[i].reg);
 }
 #endif
+
+void efi_add_known_memory(void)
+{
+	if (IS_ENABLED(CONFIG_EFI_LOADER))
+		/*
+		 * Memory over ram_top can be used by various firmware
+		 * Declare to EFI only memory area below ram_top
+		 */
+		efi_add_memory_map(gd->ram_base, gd->ram_top - gd->ram_base,
+				   EFI_CONVENTIONAL_MEMORY);
+}

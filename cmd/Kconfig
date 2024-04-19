@@ -492,7 +492,6 @@ config CMD_ELF
 
 config CMD_ELF_FDT_SETUP
 	bool "Flattened Device Tree setup in bootelf cmd"
-	default n
 	depends on CMD_ELF
 	select LIB_LIBFDT
 	select LMB
@@ -612,6 +611,8 @@ config THOR_RESET_OFF
 
 config CMD_ZBOOT
 	bool "zboot - x86 boot command"
+	depends on ZBOOT
+	default y
 	help
 	  With x86 machines it is common to boot a bzImage file which
 	  contains both a kernel and a setup.bin file. The latter includes
@@ -1394,7 +1395,9 @@ config CMD_CLONE
 
 config CMD_OPTEE_RPMB
 	bool "Enable read/write support on RPMB via OPTEE"
-	depends on SUPPORT_EMMC_RPMB && OPTEE
+	depends on (SUPPORT_EMMC_RPMB && OPTEE) || SANDBOX_TEE
+	default y if SANDBOX_TEE
+	select OPTEE_TA_AVB if SANDBOX_TEE
 	help
 	  Enable the commands for reading, writing persistent named values
 	  in the Replay Protection Memory Block partition in eMMC by
@@ -1406,6 +1409,13 @@ config CMD_MTD
 	select MTD_PARTITIONS
 	help
 	  MTD commands support.
+
+config CMD_MTD_OTP
+	bool "mtd otp"
+	depends on CMD_MTD
+	select HEXDUMP
+	help
+	  MTD commands for OTP access.
 
 config CMD_MUX
 	bool "mux"
@@ -2612,7 +2622,6 @@ config CMD_CROS_EC
 config CMD_SCMI
 	bool "Enable scmi command"
 	depends on SCMI_FIRMWARE
-	default n
 	help
 	  This command provides user interfaces to several SCMI (System
 	  Control and Management Interface) protocols available on Arm
@@ -2878,8 +2887,8 @@ config CMD_TRACE
 	  Enables a command to control using of function tracing within
 	  U-Boot. This allows recording of call traces including timing
 	  information. The command can write data to memory for exporting
-	  for analysis (e.g. using bootchart). See doc/README.trace for full
-	  details.
+	  for analysis (e.g. using bootchart). See doc/develop/trace.rst
+	  for full details.
 
 config CMD_AVB
 	bool "avb - Android Verified Boot 2.0 operations"

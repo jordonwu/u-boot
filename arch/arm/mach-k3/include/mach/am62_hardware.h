@@ -83,6 +83,7 @@
 #define CTRLMMR_DBOUNCE_CFG(index)		(MCU_CTRL_MMR0_BASE + 0x4080 + (index * 4))
 
 #define ROM_EXTENDED_BOOT_DATA_INFO		0x43c3f1e0
+#define K3_BOOT_PARAM_TABLE_INDEX_OCRAM		0x7000F290
 
 #define TI_SRAM_SCRATCH_BOARD_EEPROM_START	0x43c30000
 
@@ -119,6 +120,21 @@ static inline int k3_get_max_temp(void)
 	case JTAG_DEV_TEMP_COMMERCIAL:
 	default:
 		return 95;
+	}
+}
+
+static inline int k3_get_a53_max_frequency(void)
+{
+	switch (k3_get_speed_grade()) {
+	case 'K':
+		return 800000000;
+	case 'S':
+		return 1000000000;
+	case 'T':
+		return 1250000000;
+	case 'G':
+	default:
+		return 300000000;
 	}
 }
 
