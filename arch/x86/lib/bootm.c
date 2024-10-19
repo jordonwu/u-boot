@@ -7,7 +7,6 @@
  * Copyright (C) 2001  Erik Mouw (J.A.K.Mouw@its.tudelft.nl)
  */
 
-#include <common.h>
 #include <bootm.h>
 #include <bootstage.h>
 #include <command.h>
@@ -253,22 +252,4 @@ int do_bootm_linux(int flag, struct bootm_info *bmi)
 		return boot_jump_linux(images);
 
 	return boot_jump_linux(images);
-}
-
-static ulong get_sp(void)
-{
-	ulong ret;
-
-#if CONFIG_IS_ENABLED(X86_64)
-	asm("mov %%rsp, %0" : "=r"(ret) : );
-#else
-	asm("mov %%esp, %0" : "=r"(ret) : );
-#endif
-
-	return ret;
-}
-
-void arch_lmb_reserve(struct lmb *lmb)
-{
-	arch_lmb_reserve_generic(lmb, get_sp(), gd->ram_top, 4096);
 }

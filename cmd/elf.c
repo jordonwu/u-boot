@@ -4,36 +4,22 @@
  * All rights reserved.
  */
 
-#include <common.h>
 #include <command.h>
 #include <cpu_func.h>
 #include <elf.h>
 #include <env.h>
 #include <image.h>
 #include <log.h>
+#ifdef CONFIG_CMD_ELF_BOOTVX
 #include <net.h>
 #include <vxworks.h>
+#endif
 #ifdef CONFIG_X86
 #include <vesa.h>
 #include <asm/cache.h>
 #include <asm/e820.h>
 #include <linux/linkage.h>
 #endif
-
-/* Allow ports to override the default behavior */
-static unsigned long do_bootelf_exec(ulong (*entry)(int, char * const[]),
-				     int argc, char *const argv[])
-{
-	unsigned long ret;
-
-	/*
-	 * pass address parameter as argv[0] (aka command name),
-	 * and all remaining args
-	 */
-	ret = entry(argc, argv);
-
-	return ret;
-}
 
 /* Interpreter command to boot an arbitrary ELF image from memory */
 int do_bootelf(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
@@ -44,8 +30,8 @@ int do_bootelf(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 #endif
 	unsigned long addr; /* Address of the ELF image */
 	unsigned long rc; /* Return value from user code */
-	char *sload = NULL;
-	int rcode = 0;
+	int rcode = CMD_RET_SUCCESS;
+	Bootelf_flags flags = {0};
 
 	/* Consume 'bootelf' */
 	argc--; argv++;
@@ -53,7 +39,10 @@ int do_bootelf(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	/* Check for [-p|-s] flag. */
 	if (argc >= 1 && (argv[0][0] == '-' && \
 				(argv[0][1] == 'p' || argv[0][1] == 's'))) {
-		sload = argv[0];
+		if (argv[0][1] == 'p')
+			flags.phdr = 1;
+		log_debug("Using ELF header format %s\n",
+				flags.phdr ? "phdr" : "shdr");
 		/* Consume flag. */
 		argc--; argv++;
 	}
@@ -76,43 +65,44 @@ int do_bootelf(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	} else
 		addr = image_load_addr;
 
-	if (!valid_elf_image(addr))
-		return 1;
-
-	if (sload && sload[1] == 'p')
-		addr = load_elf_image_phdr(addr);
-	else
-		addr = load_elf_image_shdr(addr);
-
 #if CONFIG_IS_ENABLED(CMD_ELF_FDT_SETUP)
 	if (fdt_addr) {
-		printf("## Setting up FDT at 0x%08lx ...\n", fdt_addr);
+		log_debug("Setting up FDT at 0x%08lx ...\n", fdt_addr);
 		flush();
 
-		if (image_setup_libfdt(&img, (void *)fdt_addr, NULL))
+		fdt_set_totalsize((void *)fdt_addr,
+				fdt_totalsize(fdt_addr) + CONFIG_SYS_FDT_PAD);
+		if (image_setup_libfdt(&img, (void *)fdt_addr, false))
 			return 1;
 	}
 #endif
 
-	if (!env_get_autostart())
-		return rcode;
-
-	printf("## Starting application at 0x%08lx ...\n", addr);
-	flush();
+	if (env_get_autostart()) {
+		flags.autostart = 1;
+		log_debug("Starting application at 0x%08lx ...\n", addr);
+		flush();
+	}
 
 	/*
 	 * pass address parameter as argv[0] (aka command name),
-	 * and all remaining args
+	 * and all remaining arguments
 	 */
-	rc = do_bootelf_exec((void *)addr, argc, argv);
+	rc = bootelf(addr, flags, argc, argv);
 	if (rc != 0)
-		rcode = 1;
+		rcode = CMD_RET_FAILURE;
 
-	printf("## Application terminated, rc = 0x%lx\n", rc);
+	if (flags.autostart)
+	{
+		if (ENOEXEC == errno)
+			log_err("Invalid ELF image\n");
+		else
+			log_debug("## Application terminated, rc = 0x%lx\n", rc);
+	}
 
 	return rcode;
 }
 
+#ifdef CONFIG_CMD_ELF_BOOTVX
 /*
  * Interpreter command to boot VxWorks from a memory image.  The image can
  * be either an ELF image or a raw binary.  Will attempt to setup the
@@ -143,7 +133,7 @@ int do_bootvx(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 	else
 		addr = hextoul(argv[1], NULL);
 
-#if defined(CONFIG_CMD_NET)
+#if defined(CONFIG_CMD_NET) && !defined(CONFIG_NET_LWIP)
 	/*
 	 * Check to see if we need to tftp the image ourselves
 	 * before starting
@@ -320,6 +310,7 @@ int do_bootvx(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 
 	return 1;
 }
+#endif
 
 U_BOOT_CMD(
 	bootelf, CONFIG_SYS_MAXARGS, 0, do_bootelf,
@@ -336,8 +327,10 @@ U_BOOT_CMD(
 #endif
 );
 
+#ifdef CONFIG_CMD_ELF_BOOTVX
 U_BOOT_CMD(
 	bootvx, 2, 0, do_bootvx,
 	"Boot vxWorks from an ELF image",
 	" [address] - load address of vxWorks ELF image."
 );
+#endif

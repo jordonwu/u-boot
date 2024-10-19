@@ -6,7 +6,6 @@
  * Written by Simon Glass <sjg@chromium.org>
  */
 
-#include <common.h>
 #include <display_options.h>
 #include <log.h>
 #include <malloc.h>
@@ -32,6 +31,7 @@ static const char *const log_cat_name[] = {
 	"event",
 	"fs",
 	"expo",
+	"console",
 };
 
 _Static_assert(ARRAY_SIZE(log_cat_name) == LOGC_COUNT - LOGC_NONE,

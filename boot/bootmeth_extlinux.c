@@ -8,7 +8,6 @@
 
 #define LOG_CATEGORY UCLASS_BOOTSTD
 
-#include <common.h>
 #include <bootdev.h>
 #include <bootflow.h>
 #include <bootmeth.h>
@@ -21,6 +20,39 @@
 #include <mapmem.h>
 #include <mmc.h>
 #include <pxe_utils.h>
+
+struct extlinux_plat {
+	bool use_fallback;
+};
+
+enum extlinux_option_type {
+	EO_FALLBACK,
+	EO_INVALID
+};
+
+struct extlinux_option {
+	char *name;
+	enum extlinux_option_type option;
+};
+
+static const struct extlinux_option options[] = {
+	{"fallback", EO_FALLBACK},
+	{NULL, EO_INVALID}
+};
+
+static enum extlinux_option_type get_option(const char *option)
+{
+	int i = 0;
+
+	while (options[i].name) {
+		if (!strcmp(options[i].name, option))
+			return options[i].option;
+
+		i++;
+	}
+
+	return EO_INVALID;
+};
 
 static int extlinux_get_state_desc(struct udevice *dev, char *buf, int maxsize)
 {
@@ -143,20 +175,56 @@ static int extlinux_boot(struct udevice *dev, struct bootflow *bflow)
 	struct cmd_tbl cmdtp = {};	/* dummy */
 	struct pxe_context ctx;
 	struct extlinux_info info;
+	struct extlinux_plat *plat;
 	ulong addr;
 	int ret;
 
 	addr = map_to_sysmem(bflow->buf);
 	info.dev = dev;
 	info.bflow = bflow;
+
+	plat = dev_get_plat(dev);
+
 	ret = pxe_setup_ctx(&ctx, &cmdtp, extlinux_getfile, &info, true,
-			    bflow->fname, false);
+			    bflow->fname, false, plat->use_fallback);
 	if (ret)
 		return log_msg_ret("ctx", -EINVAL);
 
 	ret = pxe_process(&ctx, addr, false);
 	if (ret)
 		return log_msg_ret("bread", -EINVAL);
+
+	return 0;
+}
+
+static int extlinux_set_property(struct udevice *dev, const char *property, const char *value)
+{
+	struct extlinux_plat *plat;
+	static enum extlinux_option_type option;
+
+	plat = dev_get_plat(dev);
+
+	option = get_option(property);
+	if (option == EO_INVALID) {
+		printf("Invalid option\n");
+		return -EINVAL;
+	}
+
+	switch (option) {
+	case EO_FALLBACK:
+		if (!strcmp(value, "1")) {
+			plat->use_fallback = true;
+		} else if (!strcmp(value, "0")) {
+			plat->use_fallback = false;
+		} else {
+			printf("Unexpected value '%s'\n", value);
+			return -EINVAL;
+		}
+		break;
+	default:
+		printf("Unrecognised property '%s'\n", property);
+		return -EINVAL;
+	}
 
 	return 0;
 }
@@ -177,6 +245,7 @@ static struct bootmeth_ops extlinux_bootmeth_ops = {
 	.read_bootflow	= extlinux_read_bootflow,
 	.read_file	= bootmeth_common_read_file,
 	.boot		= extlinux_boot,
+	.set_property	= extlinux_set_property,
 };
 
 static const struct udevice_id extlinux_bootmeth_ids[] = {
@@ -184,11 +253,12 @@ static const struct udevice_id extlinux_bootmeth_ids[] = {
 	{ }
 };
 
-/* Put an number before 'extlinux' to provide a default ordering */
+/* Put a number before 'extlinux' to provide a default ordering */
 U_BOOT_DRIVER(bootmeth_1extlinux) = {
 	.name		= "bootmeth_extlinux",
 	.id		= UCLASS_BOOTMETH,
 	.of_match	= extlinux_bootmeth_ids,
 	.ops		= &extlinux_bootmeth_ops,
 	.bind		= extlinux_bootmeth_bind,
+	.plat_auto	= sizeof(struct extlinux_plat)
 };

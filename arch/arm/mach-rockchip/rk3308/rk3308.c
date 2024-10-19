@@ -2,11 +2,10 @@
 /*
  *Copyright (c) 2018 Rockchip Electronics Co., Ltd
  */
-#include <common.h>
 #include <init.h>
 #include <malloc.h>
-#include <asm/arch/grf_rk3308.h>
 #include <asm/arch-rockchip/bootrom.h>
+#include <asm/arch-rockchip/grf_rk3308.h>
 #include <asm/arch-rockchip/hardware.h>
 #include <asm/gpio.h>
 #include <debug_uart.h>
@@ -141,6 +140,7 @@ enum {
 
 const char * const boot_devices[BROM_LAST_BOOTSOURCE + 1] = {
 	[BROM_BOOTSOURCE_EMMC] = "/mmc@ff490000",
+	[BROM_BOOTSOURCE_SPINOR] = "/spi@ff4c0000/flash@0",
 	[BROM_BOOTSOURCE_SD] = "/mmc@ff480000",
 };
 
@@ -185,7 +185,7 @@ __weak void board_debug_uart_init(void)
 }
 #endif
 
-#if defined(CONFIG_SPL_BUILD)
+#if defined(CONFIG_XPL_BUILD)
 int arch_cpu_init(void)
 {
 	static struct rk3308_sgrf * const sgrf = (void *)SGRF_BASE;

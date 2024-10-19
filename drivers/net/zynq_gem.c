@@ -9,7 +9,6 @@
  */
 
 #include <clk.h>
-#include <common.h>
 #include <cpu_func.h>
 #include <dm.h>
 #include <generic-phy.h>
@@ -229,7 +228,6 @@ struct zynq_gem_priv {
 	struct clk tx_clk;
 	struct clk pclk;
 	u32 max_speed;
-	bool int_pcs;
 	bool dma_64bit;
 	u32 clk_en_info;
 	struct reset_ctl_bulk resets;
@@ -391,7 +389,6 @@ static int zynq_phy_init(struct udevice *dev)
 	return phy_config(priv->phydev);
 }
 
-
 static int zynq_gem_init(struct udevice *dev)
 {
 	u32 i, nwconfig, nwcfg;
@@ -506,8 +503,7 @@ static int zynq_gem_init(struct udevice *dev)
 	 * Set SGMII enable PCS selection only if internal PCS/PMA
 	 * core is used and interface is SGMII.
 	 */
-	if (priv->interface == PHY_INTERFACE_MODE_SGMII &&
-	    priv->int_pcs) {
+	if (priv->interface == PHY_INTERFACE_MODE_SGMII) {
 		nwconfig |= ZYNQ_GEM_NWCFG_SGMII_ENBL |
 			    ZYNQ_GEM_NWCFG_PCS_SEL;
 	}
@@ -531,8 +527,7 @@ static int zynq_gem_init(struct udevice *dev)
 		writel(nwcfg, &regs->nwcfg);
 
 #ifdef CONFIG_ARM64
-	if (priv->interface == PHY_INTERFACE_MODE_SGMII &&
-	    priv->int_pcs) {
+	if (priv->interface == PHY_INTERFACE_MODE_SGMII) {
 		/*
 		 * Disable AN for fixed link configuration, enable otherwise.
 		 * Must be written after PCS_SEL is set in nwconfig,
@@ -993,8 +988,6 @@ static int zynq_gem_of_to_plat(struct udevice *dev)
 	if (pdata->phy_interface == PHY_INTERFACE_MODE_NA)
 		return -EINVAL;
 	priv->interface = pdata->phy_interface;
-
-	priv->int_pcs = dev_read_bool(dev, "is-internal-pcspma");
 
 	priv->clk_en_info = dev_get_driver_data(dev);
 

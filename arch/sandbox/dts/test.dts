@@ -43,6 +43,7 @@
 		mmc4 = "/mmc4";
 		mmc5 = "/mmc5";
 		mmc6 = "/mmc6";
+		mmc7 = "/mmc7";
 		pci0 = &pci0;
 		pci1 = &pci1;
 		pci2 = &pci2;
@@ -77,7 +78,7 @@
 
 		event_log: tcg_event_log {
 			no-map;
-			reg = <(CFG_SYS_SDRAM_SIZE - 0x2000) 0x2000>;
+			reg = <(CFG_SYS_SDRAM_BASE + 0x100000) 0x2000>;
 		};
 	};
 
@@ -100,6 +101,11 @@
 			bootscr-ram-offset = /bits/ 64 <0x12345678>;
 			bootscr-flash-offset = /bits/ 64 <0>;
 			bootscr-flash-size = /bits/ 64 <0x2000>;
+			boot-led = "sandbox:green";
+			activity-led = "sandbox:red";
+			testing-bool;
+			testing-int = <123>;
+			testing-str = "testing";
 		};
 	};
 
@@ -1127,6 +1133,13 @@
 		status = "disabled";
 		compatible = "sandbox,mmc";
 		filename = "mmc6.img";
+	};
+
+	/* This is used for Android tests */
+	mmc7 {
+		status = "disabled";
+		compatible = "sandbox,mmc";
+		filename = "mmc7.img";
 	};
 
 	pch {

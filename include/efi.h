@@ -74,9 +74,19 @@ struct efi_device_path {
  * struct { u32 a; u16; b; u16 c; u8 d[8]; }; which is 4-byte
  * aligned.
  */
-typedef struct {
+typedef struct efi_guid {
 	u8 b[16];
 } efi_guid_t __attribute__((aligned(4)));
+
+static inline int guidcmp(const void *g1, const void *g2)
+{
+	return memcmp(g1, g2, sizeof(efi_guid_t));
+}
+
+static inline void *guidcpy(void *dst, const void *src)
+{
+	return memcpy(dst, src, sizeof(efi_guid_t));
+}
 
 #define EFI_BITS_PER_LONG	(sizeof(long) * 8)
 

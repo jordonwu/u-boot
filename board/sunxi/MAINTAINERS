@@ -132,6 +132,11 @@ M:	Paul Kocialkowski <contact@paulk.fr>
 S:	Maintained
 F:	configs/Ampe_A76_defconfig
 
+ANBERNIC RG35XX-2024
+M:	Chris Morgan <macromorgan@hotmail.com>
+S:	Maintained
+F:	configs/anbernic_rg35xx_h700_defconfig
+
 BANANAPI M1 PLUS
 M:	Jagan Teki <jagan@amarulasolutions.com>
 S:	Maintained
@@ -548,6 +553,12 @@ M:	Rask Ingemann Lambertsen <rask@formelder.dk>
 S:	Maintained
 F:	configs/Sunchip_CX-A99_defconfig
 W:	https://linux-sunxi.org/Sunchip_CX-A99
+
+TANIX TX1 BOARD
+M:	Andre Przywara <andre.przywara@arm.com>
+S:	Maintained
+F:	configs/tanix_tx1_defconfig
+W:	https://linux-sunxi.org/Tanix_TX1
 
 TANIX TX6 BOARD
 M:	Jernej Skrabec <jernej.skrabec@siol.net>

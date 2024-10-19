@@ -10,7 +10,7 @@
 #include <linux/stringify.h>
 #include <asm/arch/imx-regs.h>
 
-#ifdef CONFIG_SPL_BUILD
+#ifdef CONFIG_XPL_BUILD
 #define CFG_MALLOC_F_ADDR		0x930000
 
 /* For RAW image gives a error info not panic */
@@ -28,7 +28,6 @@
 #define CFG_MXC_UART_BASE		UART3_BASE_ADDR
 
 /* PHY needs a longer autonegotiation timeout after reset */
-#define PHY_ANEG_TIMEOUT		20000
 
 /* USDHC */
 #define CFG_SYS_FSL_USDHC_NUM	2

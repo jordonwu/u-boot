@@ -6,7 +6,6 @@
  * Written by Simon Glass <sjg@chromium.org>
  */
 
-#include <common.h>
 #include <bootdev.h>
 #include <bootflow.h>
 #include <bootmeth.h>
@@ -28,6 +27,7 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
+extern U_BOOT_DRIVER(bootmeth_android);
 extern U_BOOT_DRIVER(bootmeth_cros);
 extern U_BOOT_DRIVER(bootmeth_2script);
 
@@ -50,7 +50,6 @@ static int inject_response(struct unit_test_state *uts)
 /* Check 'bootflow scan/list' commands */
 static int bootflow_cmd(struct unit_test_state *uts)
 {
-	console_record_reset_enable();
 	ut_assertok(run_command("bootdev select 1", 0));
 	ut_assert_console_end();
 	ut_assertok(run_command("bootflow scan -lH", 0));
@@ -76,14 +75,13 @@ static int bootflow_cmd(struct unit_test_state *uts)
 
 	return 0;
 }
-BOOTSTD_TEST(bootflow_cmd, UT_TESTF_DM | UT_TESTF_SCAN_FDT);
+BOOTSTD_TEST(bootflow_cmd, UTF_DM | UTF_SCAN_FDT | UTF_CONSOLE);
 
 /* Check 'bootflow scan' with a label / seq */
 static int bootflow_cmd_label(struct unit_test_state *uts)
 {
 	test_set_eth_enable(false);
 
-	console_record_reset_enable();
 	ut_assertok(run_command("bootflow scan -lH mmc1", 0));
 	ut_assert_nextline("Scanning for bootflows with label 'mmc1'");
 	ut_assert_skip_to_line("(1 bootflow, 1 valid)");
@@ -111,9 +109,17 @@ static int bootflow_cmd_label(struct unit_test_state *uts)
 	 * 8   [   ]      OK  mmc       mmc2.bootdev
 	 * 9   [ + ]      OK  mmc       mmc1.bootdev
 	 * a   [   ]      OK  mmc       mmc0.bootdev
+	 *
+	 * However with CONFIG_DSA_SANDBOX=n we have two fewer (dsa-test@0 and
+	 * dsa-test@1).
 	 */
-	ut_assertok(run_command("bootflow scan -lH 9", 0));
-	ut_assert_nextline("Scanning for bootflows with label '9'");
+	if (CONFIG_IS_ENABLED(DSA_SANDBOX)) {
+		ut_assertok(run_command("bootflow scan -lH 9", 0));
+		ut_assert_nextline("Scanning for bootflows with label '9'");
+	} else {
+		ut_assertok(run_command("bootflow scan -lH 7", 0));
+		ut_assert_nextline("Scanning for bootflows with label '7'");
+	}
 	ut_assert_skip_to_line("(1 bootflow, 1 valid)");
 
 	ut_assertok(run_command("bootflow scan -lH 0", 0));
@@ -123,15 +129,14 @@ static int bootflow_cmd_label(struct unit_test_state *uts)
 
 	return 0;
 }
-BOOTSTD_TEST(bootflow_cmd_label, UT_TESTF_DM | UT_TESTF_SCAN_FDT |
-	     UT_TESTF_ETH_BOOTDEV);
+BOOTSTD_TEST(bootflow_cmd_label, UTF_DM | UTF_SCAN_FDT | UTF_ETH_BOOTDEV |
+	     UTF_CONSOLE);
 
 /* Check 'bootflow scan/list' commands using all bootdevs */
 static int bootflow_cmd_glob(struct unit_test_state *uts)
 {
 	ut_assertok(bootstd_test_drop_bootdev_order(uts));
 
-	console_record_reset_enable();
 	ut_assertok(run_command("bootflow scan -lGH", 0));
 	ut_assert_nextline("Scanning for bootflows in all bootdevs");
 	ut_assert_nextline("Seq  Method       State   Uclass    Part  Name                      Filename");
@@ -156,14 +161,13 @@ static int bootflow_cmd_glob(struct unit_test_state *uts)
 
 	return 0;
 }
-BOOTSTD_TEST(bootflow_cmd_glob, UT_TESTF_DM | UT_TESTF_SCAN_FDT);
+BOOTSTD_TEST(bootflow_cmd_glob, UTF_DM | UTF_SCAN_FDT | UTF_CONSOLE);
 
 /* Check 'bootflow scan -e' */
 static int bootflow_cmd_scan_e(struct unit_test_state *uts)
 {
 	ut_assertok(bootstd_test_drop_bootdev_order(uts));
 
-	console_record_reset_enable();
 	ut_assertok(run_command("bootflow scan -aleGH", 0));
 	ut_assert_nextline("Scanning for bootflows in all bootdevs");
 	ut_assert_nextline("Seq  Method       State   Uclass    Part  Name                      Filename");
@@ -207,12 +211,11 @@ static int bootflow_cmd_scan_e(struct unit_test_state *uts)
 
 	return 0;
 }
-BOOTSTD_TEST(bootflow_cmd_scan_e, UT_TESTF_DM | UT_TESTF_SCAN_FDT);
+BOOTSTD_TEST(bootflow_cmd_scan_e, UTF_DM | UTF_SCAN_FDT | UTF_CONSOLE);
 
 /* Check 'bootflow info' */
 static int bootflow_cmd_info(struct unit_test_state *uts)
 {
-	console_record_reset_enable();
 	ut_assertok(run_command("bootdev select 1", 0));
 	ut_assert_console_end();
 	ut_assertok(run_command("bootflow scan", 0));
@@ -248,12 +251,11 @@ static int bootflow_cmd_info(struct unit_test_state *uts)
 
 	return 0;
 }
-BOOTSTD_TEST(bootflow_cmd_info, UT_TESTF_DM | UT_TESTF_SCAN_FDT);
+BOOTSTD_TEST(bootflow_cmd_info, UTF_DM | UTF_SCAN_FDT | UTF_CONSOLE);
 
 /* Check 'bootflow scan -b' to boot the first available bootdev */
 static int bootflow_scan_boot(struct unit_test_state *uts)
 {
-	console_record_reset_enable();
 	ut_assertok(inject_response(uts));
 	ut_assertok(run_command("bootflow scan -b", 0));
 	ut_assert_nextline(
@@ -270,7 +272,7 @@ static int bootflow_scan_boot(struct unit_test_state *uts)
 
 	return 0;
 }
-BOOTSTD_TEST(bootflow_scan_boot, UT_TESTF_DM | UT_TESTF_SCAN_FDT);
+BOOTSTD_TEST(bootflow_scan_boot, UTF_DM | UTF_SCAN_FDT | UTF_CONSOLE);
 
 /* Check iterating through available bootflows */
 static int bootflow_iter(struct unit_test_state *uts)
@@ -368,7 +370,7 @@ static int bootflow_iter(struct unit_test_state *uts)
 
 	return 0;
 }
-BOOTSTD_TEST(bootflow_iter, UT_TESTF_DM | UT_TESTF_SCAN_FDT);
+BOOTSTD_TEST(bootflow_iter, UTF_DM | UTF_SCAN_FDT);
 
 #if defined(CONFIG_SANDBOX) && defined(CONFIG_BOOTMETH_GLOBAL)
 /* Check using the system bootdev */
@@ -386,7 +388,6 @@ static int bootflow_system(struct unit_test_state *uts)
 
 	/* We should get a single 'bootmgr' method right at the end */
 	bootstd_clear_glob();
-	console_record_reset_enable();
 	ut_assertok(run_command("bootflow scan -lH", 0));
 	ut_assert_skip_to_line(
 		"  0  efi_mgr      ready   (none)       0  <NULL>                    ");
@@ -396,8 +397,8 @@ static int bootflow_system(struct unit_test_state *uts)
 
 	return 0;
 }
-BOOTSTD_TEST(bootflow_system, UT_TESTF_DM | UT_TESTF_SCAN_PDATA |
-	     UT_TESTF_SCAN_FDT);
+BOOTSTD_TEST(bootflow_system, UTF_DM | UTF_SCAN_PDATA | UTF_SCAN_FDT |
+	     UTF_CONSOLE);
 #endif
 
 /* Check disabling a bootmethod if it requests it */
@@ -416,7 +417,6 @@ static int bootflow_iter_disable(struct unit_test_state *uts)
 	ut_assertok(bootstd_test_drop_bootdev_order(uts));
 
 	bootstd_clear_glob();
-	console_record_reset_enable();
 	ut_assertok(inject_response(uts));
 	ut_assertok(run_command("bootflow scan -lbH", 0));
 
@@ -438,7 +438,7 @@ static int bootflow_iter_disable(struct unit_test_state *uts)
 
 	return 0;
 }
-BOOTSTD_TEST(bootflow_iter_disable, UT_TESTF_DM | UT_TESTF_SCAN_FDT);
+BOOTSTD_TEST(bootflow_iter_disable, UTF_DM | UTF_SCAN_FDT | UTF_CONSOLE);
 
 /* Check 'bootflow scan' with a bootmeth ordering including a global bootmeth */
 static int bootflow_scan_glob_bootmeth(struct unit_test_state *uts)
@@ -452,7 +452,6 @@ static int bootflow_scan_glob_bootmeth(struct unit_test_state *uts)
 	 * Make sure that the -G flag makes the scan fail, since this is not
 	 * supported when an ordering is provided
 	 */
-	console_record_reset_enable();
 	ut_assertok(bootmeth_set_order("efi firmware0"));
 	ut_assertok(run_command("bootflow scan -lGH", 0));
 	ut_assert_nextline("Scanning for bootflows in all bootdevs");
@@ -479,12 +478,12 @@ static int bootflow_scan_glob_bootmeth(struct unit_test_state *uts)
 
 	return 0;
 }
-BOOTSTD_TEST(bootflow_scan_glob_bootmeth, UT_TESTF_DM | UT_TESTF_SCAN_FDT);
+BOOTSTD_TEST(bootflow_scan_glob_bootmeth, UTF_DM | UTF_SCAN_FDT |
+	     UTF_CONSOLE);
 
 /* Check 'bootflow boot' to boot a selected bootflow */
 static int bootflow_cmd_boot(struct unit_test_state *uts)
 {
-	console_record_reset_enable();
 	ut_assertok(run_command("bootdev select 1", 0));
 	ut_assert_console_end();
 	ut_assertok(run_command("bootflow scan", 0));
@@ -508,7 +507,7 @@ static int bootflow_cmd_boot(struct unit_test_state *uts)
 
 	return 0;
 }
-BOOTSTD_TEST(bootflow_cmd_boot, UT_TESTF_DM | UT_TESTF_SCAN_FDT);
+BOOTSTD_TEST(bootflow_cmd_boot, UTF_DM | UTF_SCAN_FDT | UTF_CONSOLE);
 
 /**
  * prep_mmc_bootdev() - Set up an mmc bootdev so we can access other distros
@@ -519,12 +518,12 @@ BOOTSTD_TEST(bootflow_cmd_boot, UT_TESTF_DM | UT_TESTF_SCAN_FDT);
  * @uts: Unit test state
  * @mmc_dev: MMC device to use, e.g. "mmc4". Note that this must remain valid
  *	in the caller until
- * @bind_cros: true to bind the ChromiumOS bootmeth
+ * @bind_cros: true to bind the ChromiumOS and Android bootmeths
  * @old_orderp: Returns the original bootdev order, which must be restored
  * Returns 0 on success, -ve on failure
  */
 static int prep_mmc_bootdev(struct unit_test_state *uts, const char *mmc_dev,
-			    bool bind_cros, const char ***old_orderp)
+			    bool bind_cros_android, const char ***old_orderp)
 {
 	static const char *order[] = {"mmc2", "mmc1", NULL, NULL};
 	struct udevice *dev, *bootstd;
@@ -546,10 +545,17 @@ static int prep_mmc_bootdev(struct unit_test_state *uts, const char *mmc_dev,
 				"bootmeth_script", 0, ofnode_null(), &dev));
 
 	/* Enable the cros bootmeth if needed */
-	if (IS_ENABLED(CONFIG_BOOTMETH_CROS) && bind_cros) {
+	if (IS_ENABLED(CONFIG_BOOTMETH_CROS) && bind_cros_android) {
 		ut_assertok(uclass_first_device_err(UCLASS_BOOTSTD, &bootstd));
 		ut_assertok(device_bind(bootstd, DM_DRIVER_REF(bootmeth_cros),
 					"cros", 0, ofnode_null(), &dev));
+	}
+
+	/* Enable the android bootmeths if needed */
+	if (IS_ENABLED(CONFIG_BOOTMETH_ANDROID) && bind_cros_android) {
+		ut_assertok(uclass_first_device_err(UCLASS_BOOTSTD, &bootstd));
+		ut_assertok(device_bind(bootstd, DM_DRIVER_REF(bootmeth_android),
+					"android", 0, ofnode_null(), &dev));
 	}
 
 	/* Change the order to include the device */
@@ -578,8 +584,37 @@ static int scan_mmc_bootdev(struct unit_test_state *uts, const char *mmc_dev,
 
 	ut_assertok(prep_mmc_bootdev(uts, mmc_dev, bind_cros, &old_order));
 
-	console_record_reset_enable();
 	ut_assertok(run_command("bootflow scan", 0));
+	ut_assert_console_end();
+
+	/* Restore the order used by the device tree */
+	ut_assertok(uclass_first_device_err(UCLASS_BOOTSTD, &bootstd));
+	std = dev_get_priv(bootstd);
+	std->bootdev_order = old_order;
+
+	return 0;
+}
+
+/**
+ * scan_mmc_android_bootdev() - Set up an mmc bootdev so we can access other
+ * distros. Android bootflow might print "ANDROID:*" while scanning
+ *
+ * @uts: Unit test state
+ * @mmc_dev: MMC device to use, e.g. "mmc4"
+ * Returns 0 on success, -ve on failure
+ */
+static int scan_mmc_android_bootdev(struct unit_test_state *uts, const char *mmc_dev)
+{
+	struct bootstd_priv *std;
+	struct udevice *bootstd;
+	const char **old_order;
+
+	ut_assertok(prep_mmc_bootdev(uts, mmc_dev, true, &old_order));
+
+	ut_assertok(run_command("bootflow scan", 0));
+	/* Android bootflow might print one or two 'ANDROID:*' logs */
+	ut_check_skipline(uts);
+	ut_check_skipline(uts);
 	ut_assert_console_end();
 
 	/* Restore the order used by the device tree */
@@ -637,7 +672,7 @@ static int bootflow_cmd_menu(struct unit_test_state *uts)
 
 	return 0;
 }
-BOOTSTD_TEST(bootflow_cmd_menu, UT_TESTF_DM | UT_TESTF_SCAN_FDT);
+BOOTSTD_TEST(bootflow_cmd_menu, UTF_DM | UTF_SCAN_FDT | UTF_CONSOLE);
 
 /* Check 'bootflow scan -m' to select a bootflow using a menu */
 static int bootflow_scan_menu(struct unit_test_state *uts)
@@ -685,8 +720,7 @@ static int bootflow_scan_menu(struct unit_test_state *uts)
 
 	return 0;
 }
-BOOTSTD_TEST(bootflow_scan_menu,
-	     UT_TESTF_DM | UT_TESTF_SCAN_FDT | UT_TESTF_CONSOLE_REC);
+BOOTSTD_TEST(bootflow_scan_menu, UTF_DM | UTF_SCAN_FDT | UTF_CONSOLE);
 
 /* Check 'bootflow scan -mb' to select and boot a bootflow using a menu */
 static int bootflow_scan_menu_boot(struct unit_test_state *uts)
@@ -732,8 +766,7 @@ static int bootflow_scan_menu_boot(struct unit_test_state *uts)
 
 	return 0;
 }
-BOOTSTD_TEST(bootflow_scan_menu_boot,
-	     UT_TESTF_DM | UT_TESTF_SCAN_FDT | UT_TESTF_CONSOLE_REC);
+BOOTSTD_TEST(bootflow_scan_menu_boot, UTF_DM | UTF_SCAN_FDT | UTF_CONSOLE);
 
 /* Check searching for a single bootdev using the hunters */
 static int bootflow_cmd_hunt_single(struct unit_test_state *uts)
@@ -745,7 +778,6 @@ static int bootflow_cmd_hunt_single(struct unit_test_state *uts)
 
 	ut_assertok(bootstd_test_drop_bootdev_order(uts));
 
-	console_record_reset_enable();
 	ut_assertok(run_command("bootflow scan -l mmc1", 0));
 	ut_assert_nextline("Scanning for bootflows with label 'mmc1'");
 	ut_assert_skip_to_line("(1 bootflow, 1 valid)");
@@ -756,7 +788,8 @@ static int bootflow_cmd_hunt_single(struct unit_test_state *uts)
 
 	return 0;
 }
-BOOTSTD_TEST(bootflow_cmd_hunt_single, UT_TESTF_DM | UT_TESTF_SCAN_FDT);
+BOOTSTD_TEST(bootflow_cmd_hunt_single, UTF_DM | UTF_SCAN_FDT |
+	     UTF_CONSOLE);
 
 /* Check searching for a uclass label using the hunters */
 static int bootflow_cmd_hunt_label(struct unit_test_state *uts)
@@ -770,7 +803,6 @@ static int bootflow_cmd_hunt_label(struct unit_test_state *uts)
 	test_set_eth_enable(false);
 	ut_assertok(bootstd_test_drop_bootdev_order(uts));
 
-	console_record_reset_enable();
 	ut_assertok(run_command("bootflow scan -l mmc", 0));
 
 	/* check that the hunter was used */
@@ -793,7 +825,7 @@ static int bootflow_cmd_hunt_label(struct unit_test_state *uts)
 
 	return 0;
 }
-BOOTSTD_TEST(bootflow_cmd_hunt_label, UT_TESTF_DM | UT_TESTF_SCAN_FDT);
+BOOTSTD_TEST(bootflow_cmd_hunt_label, UTF_DM | UTF_SCAN_FDT | UTF_CONSOLE);
 
 /**
  * check_font() - Check that the font size for an item matches expectations
@@ -853,7 +885,7 @@ static int bootflow_menu_theme(struct unit_test_state *uts)
 
 	return 0;
 }
-BOOTSTD_TEST(bootflow_menu_theme, UT_TESTF_DM | UT_TESTF_SCAN_FDT);
+BOOTSTD_TEST(bootflow_menu_theme, UTF_DM | UTF_SCAN_FDT | UTF_CONSOLE);
 
 /**
  * check_arg() - Check both the normal case and the buffer-overflow case
@@ -1089,7 +1121,6 @@ static int bootflow_cmdline(struct unit_test_state *uts)
 {
 	ut_assertok(run_command("bootflow scan mmc", 0));
 	ut_assertok(run_command("bootflow sel 0", 0));
-	console_record_reset_enable();
 
 	ut_asserteq(1, run_command("bootflow cmdline get fred", 0));
 	ut_assert_nextline("Argument not found");
@@ -1113,13 +1144,11 @@ static int bootflow_cmdline(struct unit_test_state *uts)
 
 	ut_asserteq(0, run_command("bootflow cmdline set mary abc", 0));
 	ut_asserteq(0, run_command("bootflow cmdline set mary", 0));
-	ut_assert_nextline_empty();
-
 	ut_assert_console_end();
 
 	return 0;
 }
-BOOTSTD_TEST(bootflow_cmdline, 0);
+BOOTSTD_TEST(bootflow_cmdline, UTF_CONSOLE);
 
 /* test a few special changes to a long command line */
 static int bootflow_cmdline_special(struct unit_test_state *uts)
@@ -1160,4 +1189,27 @@ static int bootflow_cros(struct unit_test_state *uts)
 
 	return 0;
 }
-BOOTSTD_TEST(bootflow_cros, 0);
+BOOTSTD_TEST(bootflow_cros, UTF_CONSOLE);
+
+/* Test Android bootmeth  */
+static int bootflow_android(struct unit_test_state *uts)
+{
+	if (!IS_ENABLED(CONFIG_BOOTMETH_ANDROID))
+		return -EAGAIN;
+
+	ut_assertok(scan_mmc_android_bootdev(uts, "mmc7"));
+	ut_assertok(run_command("bootflow list", 0));
+
+	ut_assert_nextlinen("Showing all");
+	ut_assert_nextlinen("Seq");
+	ut_assert_nextlinen("---");
+	ut_assert_nextlinen("  0  extlinux");
+	ut_assert_nextlinen("  1  android      ready   mmc          0  mmc7.bootdev.whole        ");
+	ut_assert_nextlinen("---");
+	ut_assert_skip_to_line("(2 bootflows, 2 valid)");
+
+	ut_assert_console_end();
+
+	return 0;
+}
+BOOTSTD_TEST(bootflow_android, UTF_CONSOLE);

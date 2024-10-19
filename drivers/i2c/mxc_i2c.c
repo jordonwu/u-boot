@@ -14,7 +14,7 @@
  *
  */
 
-#include <common.h>
+#include <config.h>
 #include <log.h>
 #include <asm/arch/clock.h>
 #include <asm/arch/imx-regs.h>
@@ -512,7 +512,6 @@ static int i2c_init_transfer(struct mxc_i2c_bus *i2c_bus, u8 chip,
 	return ret;
 }
 
-
 static int i2c_write_data(struct mxc_i2c_bus *i2c_bus, u8 chip, const u8 *buf,
 			  int len)
 {
@@ -621,6 +620,7 @@ int enable_i2c_clk(unsigned char enable, unsigned int i2c_num)
 	__attribute__((weak, alias("__enable_i2c_clk")));
 
 #if !CONFIG_IS_ENABLED(DM_I2C)
+
 /*
  * Read data from I2C device
  *

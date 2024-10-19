@@ -6,6 +6,7 @@ U-Boot API documentation
 .. toctree::
    :maxdepth: 2
 
+   bootcount
    clk
    dfu
    dm
@@ -13,6 +14,7 @@ U-Boot API documentation
    event
    getopt
    interrupt
+   led
    linker_lists
    lmb
    logging

@@ -3,7 +3,7 @@
  * Copyright (C) 2012 Samsung Electronics
  */
 
-#include <common.h>
+#include <config.h>
 #include <dm.h>
 #include <dwc3-uboot.h>
 #include <env.h>
@@ -87,10 +87,6 @@ int exynos_power_init(void)
 #endif	/* CONFIG_PMIC_S2MPS11 */
 	if (ret == -ENODEV)
 		return 0;
-
-	ret = regulators_enable_boot_on(false);
-	if (ret)
-		return ret;
 
 	ret = exynos_set_regulator("vdd_mif", 1100000);
 	if (ret)

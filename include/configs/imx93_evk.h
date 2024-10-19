@@ -13,7 +13,7 @@
 #define CFG_SYS_UBOOT_BASE	\
 	(QSPI0_AMBA_BASE + CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR * 512)
 
-#ifdef CONFIG_SPL_BUILD
+#ifdef CONFIG_XPL_BUILD
 #define CFG_MALLOC_F_ADDR		0x204D0000
 #endif
 
@@ -133,9 +133,5 @@
 
 /* Using ULP WDOG for reset */
 #define WDOG_BASE_ADDR          WDG3_BASE_ADDR
-
-#if defined(CONFIG_CMD_NET)
-#define PHY_ANEG_TIMEOUT 20000
-#endif
 
 #endif

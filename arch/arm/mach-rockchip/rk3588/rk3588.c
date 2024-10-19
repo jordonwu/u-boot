@@ -4,7 +4,6 @@
  * Copyright (c) 2022 Edgeble AI Technologies Pvt. Ltd.
  */
 
-#include <common.h>
 #include <spl.h>
 #include <asm/armv8/mmu.h>
 #include <asm/arch-rockchip/bootrom.h>
@@ -112,7 +111,7 @@ void board_debug_uart_init(void)
 		     GPIO0B5_UART2_TX_M0 << GPIO0B5_SHIFT);
 }
 
-#ifdef CONFIG_SPL_BUILD
+#ifdef CONFIG_XPL_BUILD
 void rockchip_stimer_init(void)
 {
 	/* If Timer already enabled, don't re-init it */
@@ -131,7 +130,7 @@ void rockchip_stimer_init(void)
 #ifndef CONFIG_TPL_BUILD
 int arch_cpu_init(void)
 {
-#ifdef CONFIG_SPL_BUILD
+#ifdef CONFIG_XPL_BUILD
 #ifdef CONFIG_ROCKCHIP_DISABLE_FORCE_JTAG
 	static struct rk3588_sysgrf * const sys_grf = (void *)SYS_GRF_BASE;
 #endif

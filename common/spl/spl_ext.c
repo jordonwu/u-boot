@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0+
 
-#include <common.h>
 #include <env.h>
 #include <part.h>
 #include <spl.h>
 #include <spl_load.h>
-#include <asm/u-boot.h>
 #include <ext4fs.h>
 #include <errno.h>
 #include <image.h>
@@ -53,8 +51,7 @@ int spl_load_image_ext(struct spl_image_info *spl_image,
 		goto end;
 	}
 
-	spl_set_bl_len(&load, 1);
-	load.read = spl_fit_read;
+	spl_load_init(&load, spl_fit_read, NULL, 1);
 	err = spl_load(spl_image, bootdev, &load, filelen, 0);
 
 end:

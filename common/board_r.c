@@ -9,7 +9,7 @@
  * Marius Groeger <mgroeger@sysgo.de>
  */
 
-#include <common.h>
+#include <config.h>
 #include <api.h>
 #include <bootstage.h>
 #include <cpu_func.h>
@@ -22,6 +22,7 @@
 #include <hang.h>
 #include <image.h>
 #include <irq_func.h>
+#include <lmb.h>
 #include <log.h>
 #include <net.h>
 #include <asm/cache.h>
@@ -39,6 +40,7 @@
 #include <initcall.h>
 #include <kgdb.h>
 #include <irq_func.h>
+#include <led.h>
 #include <malloc.h>
 #include <mapmem.h>
 #include <miiphy.h>
@@ -192,7 +194,7 @@ static int initr_malloc(void)
 	ulong start;
 
 #if CONFIG_IS_ENABLED(SYS_MALLOC_F)
-	debug("Pre-reloc malloc() used %#lx bytes (%ld KB)\n", gd->malloc_ptr,
+	debug("Pre-reloc malloc() used %#x bytes (%d KB)\n", gd->malloc_ptr,
 	      gd->malloc_ptr / 1024);
 #endif
 	/* The malloc area is immediately below the monitor copy in DRAM */
@@ -230,8 +232,7 @@ static int initr_dm(void)
 
 	oftree_reset();
 
-	/* Save the pre-reloc driver model and start a new one */
-	gd->dm_root_f = gd->dm_root;
+	/* Drop the pre-reloc driver model and start a new one */
 	gd->dm_root = NULL;
 #ifdef CONFIG_TIMER
 	gd->timer = NULL;
@@ -460,19 +461,30 @@ static int initr_malloc_bootparams(void)
 }
 #endif
 
-#if defined(CONFIG_LED_STATUS)
 static int initr_status_led(void)
 {
-#if defined(CONFIG_LED_STATUS_BOOT)
-	status_led_set(CONFIG_LED_STATUS_BOOT, CONFIG_LED_STATUS_BLINKING);
-#else
 	status_led_init();
-#endif
+
 	return 0;
 }
-#endif
 
-#ifdef CONFIG_CMD_NET
+static int initr_boot_led_blink(void)
+{
+	status_led_boot_blink();
+
+	led_boot_blink();
+
+	return 0;
+}
+
+static int initr_boot_led_on(void)
+{
+	led_boot_on();
+
+	return 0;
+}
+
+#if defined(CONFIG_CMD_NET)
 static int initr_net(void)
 {
 	puts("Net:   ");
@@ -511,6 +523,14 @@ int initr_mem(void)
 }
 #endif
 
+static int initr_lmb(void)
+{
+	if (CONFIG_IS_ENABLED(LMB))
+		return lmb_init();
+	else
+		return 0;
+}
+
 static int dm_announce(void)
 {
 	int device_count;
@@ -522,6 +542,8 @@ static int dm_announce(void)
 		       uclass_count);
 		if (CONFIG_IS_ENABLED(OF_REAL))
 			printf(", devicetree: %s", fdtdec_get_srcname());
+		if (CONFIG_IS_ENABLED(UPL))
+			printf(", universal payload active");
 		printf("\n");
 		if (IS_ENABLED(CONFIG_OF_HAS_PRIOR_STAGE) &&
 		    (gd->fdt_src == FDTSRC_SEPARATE ||
@@ -611,6 +633,7 @@ static init_fnc_t init_sequence_r[] = {
 #ifdef CONFIG_CLOCKS
 	set_cpu_clk_info, /* Setup clock information */
 #endif
+	initr_lmb,
 #ifdef CONFIG_EFI_LOADER
 	efi_memory_init,
 #endif
@@ -714,9 +737,8 @@ static init_fnc_t init_sequence_r[] = {
 #if defined(CONFIG_MICROBLAZE) || defined(CONFIG_M68K)
 	timer_init,		/* initialize timer */
 #endif
-#if defined(CONFIG_LED_STATUS)
 	initr_status_led,
-#endif
+	initr_boot_led_blink,
 	/* PPC has a udelay(20) here dating from 2002. Why? */
 #ifdef CONFIG_BOARD_LATE_INIT
 	board_late_init,
@@ -727,7 +749,7 @@ static init_fnc_t init_sequence_r[] = {
 #ifdef CONFIG_PCI_ENDPOINT
 	pci_ep_init,
 #endif
-#ifdef CONFIG_CMD_NET
+#if defined(CONFIG_CMD_NET)
 	INIT_FUNC_WATCHDOG_RESET
 	initr_net,
 #endif
@@ -739,6 +761,7 @@ static init_fnc_t init_sequence_r[] = {
 #if defined(CFG_PRAM)
 	initr_mem,
 #endif
+	initr_boot_led_on,
 	run_main_loop,
 };
 

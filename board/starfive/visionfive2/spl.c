@@ -86,6 +86,43 @@ static const struct starfive_vf2_pro starfive_verb[] = {
 		"tx-internal-delay-ps", "0"},
 };
 
+static const struct starfive_vf2_pro star64_pine64[] = {
+	{"/soc/ethernet@16030000", "starfive,tx-use-rgmii-clk", NULL},
+	{"/soc/ethernet@16040000", "starfive,tx-use-rgmii-clk", NULL},
+
+	{"/soc/ethernet@16030000/mdio/ethernet-phy@0",
+		"motorcomm,tx-clk-adj-enabled", NULL},
+	{"/soc/ethernet@16030000/mdio/ethernet-phy@0",
+		"motorcomm,tx-clk-10-inverted", NULL},
+	{"/soc/ethernet@16030000/mdio/ethernet-phy@0",
+		"motorcomm,tx-clk-100-inverted", NULL},
+	{"/soc/ethernet@16030000/mdio/ethernet-phy@0",
+		"motorcomm,tx-clk-1000-inverted", NULL},
+	{"/soc/ethernet@16030000/mdio/ethernet-phy@0",
+		"motorcomm,rx-clk-drv-microamp", "2910"},
+	{"/soc/ethernet@16030000/mdio/ethernet-phy@0",
+		"motorcomm,rx-data-drv-microamp", "2910"},
+	{"/soc/ethernet@16030000/mdio/ethernet-phy@0",
+		"rx-internal-delay-ps", "1900"},
+	{"/soc/ethernet@16030000/mdio/ethernet-phy@0",
+		"tx-internal-delay-ps", "1500"},
+
+	{"/soc/ethernet@16040000/mdio/ethernet-phy@1",
+		"motorcomm,tx-clk-adj-enabled", NULL},
+	{"/soc/ethernet@16040000/mdio/ethernet-phy@1",
+		"motorcomm,tx-clk-10-inverted", NULL},
+	{"/soc/ethernet@16040000/mdio/ethernet-phy@1",
+		"motorcomm,tx-clk-100-inverted", NULL},
+	{"/soc/ethernet@16040000/mdio/ethernet-phy@1",
+		"motorcomm,rx-clk-drv-microamp", "2910"},
+	{"/soc/ethernet@16040000/mdio/ethernet-phy@1",
+		"motorcomm,rx-data-drv-microamp", "2910"},
+	{"/soc/ethernet@16040000/mdio/ethernet-phy@1",
+		"rx-internal-delay-ps", "0"},
+	{"/soc/ethernet@16040000/mdio/ethernet-phy@1",
+		"tx-internal-delay-ps", "300"},
+};
+
 void spl_fdt_fixup_mars(void *fdt)
 {
 	static const char compat[] = "milkv,mars\0starfive,jh7110";
@@ -127,6 +164,39 @@ void spl_fdt_fixup_mars(void *fdt)
 				break;
 		}
 	}
+}
+
+void spl_fdt_fixup_mars_cm(void *fdt)
+{
+	const char *compat;
+	const char *model;
+	int compat_size;
+
+	spl_fdt_fixup_mars(fdt);
+
+	if (!get_mmc_size_from_eeprom()) {
+		int offset;
+		static const char
+		compat_cm_lite[] = "milkv,mars-cm-lite\0starfive,jh7110";
+
+		model = "Milk-V Mars CM Lite";
+		compat = compat_cm_lite;
+		compat_size = sizeof(compat_cm_lite);
+
+		offset = fdt_path_offset(fdt, "/soc/pinctrl/mmc0-pins/mmc0-pins-rest");
+		/* GPIOMUX(22, GPOUT_SYS_SDIO0_RST, GPOEN_ENABLE, GPI_NONE) */
+		fdt_setprop_u32(fdt, offset, "pinmux", 0xff130016);
+	} else {
+		static const char
+		compat_cm[] = "milkv,mars-cm\0starfive,jh7110";
+
+		model = "Milk-V Mars CM";
+		compat = compat_cm;
+		compat_size = sizeof(compat_cm);
+	}
+	fdt_setprop(fdt, fdt_path_offset(fdt, "/"),
+		    "compatible", compat, compat_size);
+	fdt_setprop_string(fdt, fdt_path_offset(fdt, "/"), "model", model);
 }
 
 void spl_fdt_fixup_version_a(void *fdt)
@@ -226,6 +296,56 @@ void spl_fdt_fixup_version_b(void *fdt)
 	}
 }
 
+void spl_fdt_fixup_star64(void *fdt)
+{
+	static const char compat[] = "pine64,star64\0starfive,jh7110";
+	u32 phandle;
+	u8 i;
+	int offset;
+	int ret;
+
+	fdt_setprop(fdt, fdt_path_offset(fdt, "/"), "compatible", compat, sizeof(compat));
+	fdt_setprop_string(fdt, fdt_path_offset(fdt, "/"), "model",
+			   "Pine64 Star64");
+
+	/* gmac0 */
+	offset = fdt_path_offset(fdt, "/soc/clock-controller@17000000");
+	phandle = fdt_get_phandle(fdt, offset);
+	offset = fdt_path_offset(fdt, "/soc/ethernet@16030000");
+
+	fdt_setprop_u32(fdt, offset, "assigned-clocks", phandle);
+	fdt_appendprop_u32(fdt, offset, "assigned-clocks", JH7110_AONCLK_GMAC0_TX);
+	fdt_setprop_u32(fdt, offset,  "assigned-clock-parents", phandle);
+	fdt_appendprop_u32(fdt, offset,  "assigned-clock-parents",
+			   JH7110_AONCLK_GMAC0_RMII_RTX);
+
+	/* gmac1 */
+	offset = fdt_path_offset(fdt, "/soc/clock-controller@13020000");
+	phandle = fdt_get_phandle(fdt, offset);
+	offset = fdt_path_offset(fdt, "/soc/ethernet@16040000");
+
+	fdt_setprop_u32(fdt, offset, "assigned-clocks", phandle);
+	fdt_appendprop_u32(fdt, offset, "assigned-clocks", JH7110_SYSCLK_GMAC1_TX);
+	fdt_setprop_u32(fdt, offset,  "assigned-clock-parents", phandle);
+	fdt_appendprop_u32(fdt, offset,  "assigned-clock-parents",
+			   JH7110_SYSCLK_GMAC1_RMII_RTX);
+
+	for (i = 0; i < ARRAY_SIZE(star64_pine64); i++) {
+		offset = fdt_path_offset(fdt, star64_pine64[i].path);
+
+		if (star64_pine64[i].value)
+			ret = fdt_setprop_u32(fdt, offset,  star64_pine64[i].name,
+					      dectoul(star64_pine64[i].value, NULL));
+		else
+			ret = fdt_setprop_empty(fdt, offset, star64_pine64[i].name);
+
+		if (ret) {
+			pr_err("%s set prop %s fail.\n", __func__, star64_pine64[i].name);
+				break;
+		}
+	}
+}
+
 void spl_perform_fixups(struct spl_image_info *spl_image)
 {
 	u8 version;
@@ -236,7 +356,9 @@ void spl_perform_fixups(struct spl_image_info *spl_image)
 		pr_err("Can't read EEPROM\n");
 		return;
 	}
-	if (!strncmp(product_id, "MARS", 4)) {
+	if (!strncmp(product_id, "MARC", 4)) {
+		spl_fdt_fixup_mars_cm(spl_image->fdt_addr);
+	} else if (!strncmp(product_id, "MARS", 4)) {
 		spl_fdt_fixup_mars(spl_image->fdt_addr);
 	} else if (!strncmp(product_id, "VF7110", 6)) {
 		version = get_pcb_revision_from_eeprom();
@@ -252,6 +374,8 @@ void spl_perform_fixups(struct spl_image_info *spl_image)
 			spl_fdt_fixup_version_b(spl_image->fdt_addr);
 		break;
 		};
+	} else if (!strncmp(product_id, "STAR64", 6)) {
+		spl_fdt_fixup_star64(spl_image->fdt_addr);
 	} else {
 		pr_err("Unknown product %s\n", product_id);
 	};
@@ -285,9 +409,9 @@ int spl_board_init_f(void)
 
 	jh7110_jtag_init();
 
-	ret = spl_soc_init();
+	ret = spl_dram_init();
 	if (ret) {
-		debug("JH7110 SPL init failed: %d\n", ret);
+		debug("JH7110 DRAM init failed: %d\n", ret);
 		return ret;
 	}
 

@@ -8,12 +8,10 @@
  * FAT Image Functions copied from spl_mmc.c
  */
 
-#include <common.h>
 #include <env.h>
 #include <log.h>
 #include <spl.h>
 #include <spl_load.h>
-#include <asm/u-boot.h>
 #include <fat.h>
 #include <errno.h>
 #include <image.h>
@@ -85,12 +83,10 @@ int spl_load_image_fat(struct spl_image_info *spl_image,
 		size = 0;
 	}
 
-	load.read = spl_fit_read;
-	if (IS_ENABLED(CONFIG_SPL_FS_FAT_DMA_ALIGN))
-		spl_set_bl_len(&load, ARCH_DMA_MINALIGN);
-	else
-		spl_set_bl_len(&load, 1);
-	load.priv = (void *)filename;
+	spl_load_init(&load, spl_fit_read, (void *)filename,
+		      IS_ENABLED(CONFIG_SPL_FS_FAT_DMA_ALIGN) ?
+		      ARCH_DMA_MINALIGN : 1);
+
 	err = spl_load(spl_image, bootdev, &load, size, 0);
 
 end:

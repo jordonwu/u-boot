@@ -6,14 +6,12 @@
  * Michal Simek <michal.simek@amd.com>
  */
 
-#include <common.h>
 #include <efi.h>
 #include <efi_loader.h>
 #include <env.h>
 #include <image.h>
 #include <init.h>
 #include <jffs2/load_kernel.h>
-#include <lmb.h>
 #include <log.h>
 #include <asm/global_data.h>
 #include <asm/sections.h>
@@ -32,7 +30,7 @@
 #include <soc.h>
 #include <linux/ctype.h>
 #include <linux/kernel.h>
-#include <uuid.h>
+#include <u-boot/uuid.h>
 
 #include "fru.h"
 
@@ -372,7 +370,7 @@ void *board_fdt_blob_setup(int *err)
 			return fdt_blob;
 	}
 
-	if (!IS_ENABLED(CONFIG_SPL_BUILD) &&
+	if (!IS_ENABLED(CONFIG_XPL_BUILD) &&
 	    !IS_ENABLED(CONFIG_VERSAL_NO_DDR) &&
 	    !IS_ENABLED(CONFIG_ZYNQMP_NO_DDR)) {
 		fdt_blob = (void *)CONFIG_XILINX_OF_BOARD_DTB_ADDR;
@@ -383,7 +381,7 @@ void *board_fdt_blob_setup(int *err)
 		debug("DTB is not passed via %p\n", fdt_blob);
 	}
 
-	if (IS_ENABLED(CONFIG_SPL_BUILD)) {
+	if (IS_ENABLED(CONFIG_XPL_BUILD)) {
 		/*
 		 * FDT is at end of BSS unless it is in a different memory
 		 * region
@@ -427,28 +425,25 @@ int board_late_init_xilinx(void)
 	struct xilinx_board_description *desc;
 	phys_size_t bootm_size = gd->ram_top - gd->ram_base;
 	u64 bootscr_flash_offset, bootscr_flash_size;
+	ulong scriptaddr;
+	u64 bootscr_address;
+	u64 bootscr_offset;
 
-	if (!IS_ENABLED(CONFIG_MICROBLAZE)) {
-		ulong scriptaddr;
-		u64 bootscr_address;
-		u64 bootscr_offset;
-
-		/* Fetch bootscr_address/bootscr_offset from DT and update */
-		if (!ofnode_read_bootscript_address(&bootscr_address,
-						    &bootscr_offset)) {
-			if (bootscr_offset)
-				ret |= env_set_hex("scriptaddr",
-						   gd->ram_base +
-						   bootscr_offset);
-			else
-				ret |= env_set_hex("scriptaddr",
-						   bootscr_address);
-		} else {
-			/* Update scriptaddr(bootscr offset) from env */
-			scriptaddr = env_get_hex("scriptaddr", 0);
+	/* Fetch bootscr_address/bootscr_offset from DT and update */
+	if (!ofnode_read_bootscript_address(&bootscr_address,
+					    &bootscr_offset)) {
+		if (bootscr_offset)
 			ret |= env_set_hex("scriptaddr",
-					   gd->ram_base + scriptaddr);
-		}
+					   gd->ram_base +
+					   bootscr_offset);
+		else
+			ret |= env_set_hex("scriptaddr",
+					   bootscr_address);
+	} else {
+		/* Update scriptaddr(bootscr offset) from env */
+		scriptaddr = env_get_hex("scriptaddr", 0);
+		ret |= env_set_hex("scriptaddr",
+				   gd->ram_base + scriptaddr);
 	}
 
 	if (!ofnode_read_bootscript_flash(&bootscr_flash_offset,
@@ -496,7 +491,8 @@ int board_late_init_xilinx(void)
 				ret |= env_set_by_index("uuid", id, uuid);
 			}
 
-			if (!CONFIG_IS_ENABLED(NET))
+			if (!(CONFIG_IS_ENABLED(NET) ||
+			      CONFIG_IS_ENABLED(NET_LWIP)))
 				continue;
 
 			for (i = 0; i < EEPROM_HDR_NO_OF_MAC_ADDR; i++) {
@@ -520,7 +516,7 @@ int __maybe_unused board_fit_config_name_match(const char *name)
 {
 	debug("%s: Check %s, default %s\n", __func__, name, board_name);
 
-#if !defined(CONFIG_SPL_BUILD)
+#if !defined(CONFIG_XPL_BUILD)
 	if (IS_ENABLED(CONFIG_REGEX)) {
 		struct slre slre;
 		int ret;
@@ -666,88 +662,16 @@ int embedded_dtb_select(void)
 }
 #endif
 
-#if defined(CONFIG_LMB)
-
-#ifndef MMU_SECTION_SIZE
-#define MMU_SECTION_SIZE        (1 * 1024 * 1024)
-#endif
-
-phys_addr_t board_get_usable_ram_top(phys_size_t total_size)
-{
-	phys_size_t size;
-	phys_addr_t reg;
-	struct lmb lmb;
-
-	if (!total_size)
-		return gd->ram_top;
-
-	if (!IS_ALIGNED((ulong)gd->fdt_blob, 0x8))
-		panic("Not 64bit aligned DT location: %p\n", gd->fdt_blob);
-
-	/* found enough not-reserved memory to relocated U-Boot */
-	lmb_init(&lmb);
-	lmb_add(&lmb, gd->ram_base, gd->ram_size);
-	boot_fdt_add_mem_rsv_regions(&lmb, (void *)gd->fdt_blob);
-	size = ALIGN(CONFIG_SYS_MALLOC_LEN + total_size, MMU_SECTION_SIZE);
-	reg = lmb_alloc(&lmb, size, MMU_SECTION_SIZE);
-
-	if (!reg)
-		reg = gd->ram_top - size;
-
-	return reg + size;
-}
-#endif
-
 #ifdef CONFIG_OF_BOARD_SETUP
 #define MAX_RAND_SIZE 8
 int ft_board_setup(void *blob, struct bd_info *bd)
 {
-	size_t n = MAX_RAND_SIZE;
-	struct udevice *dev;
-	u8 buf[MAX_RAND_SIZE];
-	int nodeoffset, ret;
-
 	static const struct node_info nodes[] = {
 		{ "arm,pl353-nand-r2p1", MTD_DEV_TYPE_NAND, },
 	};
 
 	if (IS_ENABLED(CONFIG_FDT_FIXUP_PARTITIONS) && IS_ENABLED(CONFIG_NAND_ZYNQ))
 		fdt_fixup_mtdparts(blob, nodes, ARRAY_SIZE(nodes));
-
-	if (uclass_get_device(UCLASS_RNG, 0, &dev) || !dev) {
-		debug("No RNG device\n");
-		return 0;
-	}
-
-	if (dm_rng_read(dev, buf, n)) {
-		debug("Reading RNG failed\n");
-		return 0;
-	}
-
-	if (!blob) {
-		debug("No FDT memory address configured. Please configure\n"
-		      "the FDT address via \"fdt addr <address>\" command.\n"
-		      "Aborting!\n");
-		return 0;
-	}
-
-	ret = fdt_check_header(blob);
-	if (ret < 0) {
-		debug("fdt_chosen: %s\n", fdt_strerror(ret));
-		return ret;
-	}
-
-	nodeoffset = fdt_find_or_add_subnode(blob, 0, "chosen");
-	if (nodeoffset < 0) {
-		debug("Reading chosen node failed\n");
-		return nodeoffset;
-	}
-
-	ret = fdt_setprop(blob, nodeoffset, "kaslr-seed", buf, sizeof(buf));
-	if (ret < 0) {
-		debug("Unable to set kaslr-seed on chosen node: %s\n", fdt_strerror(ret));
-		return ret;
-	}
 
 	return 0;
 }

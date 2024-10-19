@@ -4,7 +4,6 @@
  * Written by Simon Glass <sjg@chromium.org>
  */
 
-#include <common.h>
 #include <cedit.h>
 #include <env.h>
 #include <expo.h>
@@ -25,8 +24,6 @@ static int cedit_base(struct unit_test_state *uts)
 	struct scene *scn;
 
 	ut_assertok(run_command("cedit load hostfs - cedit.dtb", 0));
-
-	console_record_reset_enable();
 
 	/*
 	 * ^N  Move down to second menu
@@ -53,7 +50,7 @@ static int cedit_base(struct unit_test_state *uts)
 
 	return 0;
 }
-BOOTSTD_TEST(cedit_base, 0);
+BOOTSTD_TEST(cedit_base, UTF_CONSOLE);
 
 /* Check the cedit write_fdt and read_fdt commands */
 static int cedit_fdt(struct unit_test_state *uts)
@@ -71,7 +68,6 @@ static int cedit_fdt(struct unit_test_state *uts)
 	void *fdt;
 	int i;
 
-	console_record_reset_enable();
 	ut_assertok(run_command("cedit load hostfs - cedit.dtb", 0));
 
 	ut_asserteq(ID_SCENE1, cedit_prepare(cur_exp, &vid_priv, &scn));
@@ -123,7 +119,7 @@ static int cedit_fdt(struct unit_test_state *uts)
 
 	return 0;
 }
-BOOTSTD_TEST(cedit_fdt, 0);
+BOOTSTD_TEST(cedit_fdt, UTF_CONSOLE);
 
 /* Check the cedit write_env and read_env commands */
 static int cedit_env(struct unit_test_state *uts)
@@ -135,7 +131,6 @@ static int cedit_env(struct unit_test_state *uts)
 	struct scene *scn;
 	char *str;
 
-	console_record_reset_enable();
 	ut_assertok(run_command("cedit load hostfs - cedit.dtb", 0));
 
 	ut_asserteq(ID_SCENE1, cedit_prepare(cur_exp, &vid_priv, &scn));
@@ -178,7 +173,7 @@ static int cedit_env(struct unit_test_state *uts)
 
 	return 0;
 }
-BOOTSTD_TEST(cedit_env, 0);
+BOOTSTD_TEST(cedit_env, UTF_CONSOLE);
 
 /* Check the cedit write_cmos and read_cmos commands */
 static int cedit_cmos(struct unit_test_state *uts)
@@ -188,7 +183,6 @@ static int cedit_cmos(struct unit_test_state *uts)
 	extern struct expo *cur_exp;
 	struct scene *scn;
 
-	console_record_reset_enable();
 	ut_assertok(run_command("cedit load hostfs - cedit.dtb", 0));
 
 	ut_asserteq(ID_SCENE1, cedit_prepare(cur_exp, &vid_priv, &scn));
@@ -219,4 +213,4 @@ static int cedit_cmos(struct unit_test_state *uts)
 
 	return 0;
 }
-BOOTSTD_TEST(cedit_cmos, 0);
+BOOTSTD_TEST(cedit_cmos, UTF_CONSOLE);

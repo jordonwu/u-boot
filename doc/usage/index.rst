@@ -15,6 +15,7 @@ Use U-Boot
    cmdline
    semihosting
    measured_boot
+   upl
 
 Shell commands
 --------------
@@ -33,6 +34,7 @@ Shell commands
    cmd/bootd
    cmd/bootdev
    cmd/bootefi
+   cmd/bootelf
    cmd/bootflow
    cmd/booti
    cmd/bootm
@@ -49,6 +51,7 @@ Shell commands
    cmd/coninfo
    cmd/conitrace
    cmd/cp
+   cmd/cpu
    cmd/cyclic
    cmd/dm
    cmd/ebtupdate
@@ -91,6 +94,7 @@ Shell commands
    cmd/pinmux
    cmd/printenv
    cmd/pstore
+   cmd/pwm
    cmd/qfw
    cmd/read
    cmd/reset
@@ -108,10 +112,12 @@ Shell commands
    cmd/smbios
    cmd/sound
    cmd/source
+   cmd/tcpm
    cmd/temperature
    cmd/tftpput
    cmd/trace
    cmd/true
+   cmd/upl
    cmd/ums
    cmd/unbind
    cmd/ut

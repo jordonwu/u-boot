@@ -4,9 +4,9 @@
  * Written by Simon Glass <sjg@chromium.org>
  */
 
-#include <common.h>
 #include <dm.h>
 #include <dm/lists.h>
+#include <bitfield.h>
 #include <errno.h>
 #include <log.h>
 #include <linux/bitfield.h>
@@ -237,7 +237,7 @@ static int rk8xx_bind(struct udevice *dev)
 	if (!children)
 		debug("%s: %s - no child found\n", __func__, dev->name);
 
-	if (IS_ENABLED(CONFIG_SPL_BUILD) &&
+	if (IS_ENABLED(CONFIG_XPL_BUILD) &&
 	    IS_ENABLED(CONFIG_ROCKCHIP_RK8XX_DISABLE_BOOT_ON_POWERON))
 		dev_or_flags(dev, DM_FLAG_PROBE_AFTER_BIND);
 
@@ -278,10 +278,11 @@ static int rk8xx_probe(struct udevice *dev)
 		return ret;
 
 	priv->variant = ((msb << 8) | lsb) & RK8XX_ID_MSK;
-	show_variant = priv->variant;
+	show_variant = bitfield_extract_by_mask(priv->variant, RK8XX_ID_MSK);
 	switch (priv->variant) {
 	case RK808_ID:
-		show_variant = 0x808;	/* RK808 hardware ID is 0 */
+		/* RK808 ID is 0x0000, so fix show_variant for that PMIC */
+		show_variant = 0x808;
 		break;
 	case RK805_ID:
 	case RK816_ID:
@@ -312,7 +313,7 @@ static int rk8xx_probe(struct udevice *dev)
 		init_data_num = ARRAY_SIZE(rk806_init_reg);
 		break;
 	default:
-		printf("Unknown PMIC: RK%x!!\n", priv->variant);
+		printf("Unknown PMIC: RK%x!!\n", show_variant);
 		return -EINVAL;
 	}
 
@@ -330,7 +331,7 @@ static int rk8xx_probe(struct udevice *dev)
 		      pmic_reg_read(dev, init_data[i].reg));
 	}
 
-	if (!IS_ENABLED(CONFIG_SPL_BUILD)) {
+	if (!IS_ENABLED(CONFIG_XPL_BUILD)) {
 		printf("PMIC:  RK%x ", show_variant);
 		if (on_source && off_source)
 			printf("(on=0x%02x, off=0x%02x)",

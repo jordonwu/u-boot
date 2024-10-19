@@ -7,6 +7,7 @@
  * Andreas Heppel <aheppel@sysgo.de>
  */
 
+#include <config.h>
 #include <env_callback.h>
 #include <linux/stringify.h>
 
@@ -80,9 +81,6 @@ const char default_environment[] = {
 #endif
 #ifdef	CONFIG_SYS_LOAD_ADDR
 	"loadaddr="	__stringify(CONFIG_SYS_LOAD_ADDR)"\0"
-#endif
-#if defined(CONFIG_PCI_BOOTDELAY) && (CONFIG_PCI_BOOTDELAY > 0)
-	"pcidelay="	__stringify(CONFIG_PCI_BOOTDELAY)"\0"
 #endif
 #ifdef	CONFIG_ENV_VARS_UBOOT_CONFIG
 	"arch="		CONFIG_SYS_ARCH			"\0"

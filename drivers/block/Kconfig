@@ -1,8 +1,8 @@
 config BLK
 	bool # "Support block devices"
 	depends on DM
-	default y if MMC || USB || SCSI || NVME || IDE || AHCI || SATA
-	default y if EFI_MEDIA || VIRTIO_BLK || PVBLOCK
+	def_bool y if MMC || USB || SCSI || NVME || IDE || AHCI || SATA
+	def_bool y if EFI_MEDIA || VIRTIO_BLK || PVBLOCK
 	help
 	  Enable support for block devices, such as SCSI, MMC and USB
 	  flash sticks. These provide a block-level interface which permits
@@ -109,7 +109,7 @@ config EFI_MEDIA
 
 config SPL_BLK_FS
 	bool "Load images from filesystems on block devices"
-	depends on SPL_BLK
+	depends on SPL_BLK && SPL_FS_LOADER
 	help
 	  Use generic support to load images from fat/ext filesystems on
 	  different types of block devices such as NVMe.

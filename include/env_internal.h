@@ -15,7 +15,6 @@
 #ifndef _ENV_INTERNAL_H_
 #define _ENV_INTERNAL_H_
 
-
 /**************************************************************************
  *
  * The "environment" is stored as a list of '\0' terminated
@@ -101,6 +100,7 @@ extern const char default_environment[];
 #include <env_flags.h>
 #include <search.h>
 
+/* this is stored as bits in gd->env_has_init so is limited to 16 entries */
 enum env_location {
 	ENVL_UNKNOWN,
 	ENVL_EEPROM,

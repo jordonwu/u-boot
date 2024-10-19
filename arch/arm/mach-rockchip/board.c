@@ -8,7 +8,7 @@
  * Based on puma-rk3399.c:
  *      (C) Copyright 2017 Theobroma Systems Design und Consulting GmbH
  */
-#include <common.h>
+#include <config.h>
 #include <clk.h>
 #include <cpu_func.h>
 #include <env.h>
@@ -25,7 +25,7 @@
 #include <part.h>
 #include <ram.h>
 #include <syscon.h>
-#include <uuid.h>
+#include <u-boot/uuid.h>
 #include <u-boot/crc.h>
 #include <u-boot/sha256.h>
 #include <asm/cache.h>
@@ -202,14 +202,6 @@ int board_late_init(void)
 
 int board_init(void)
 {
-	int ret;
-
-#ifdef CONFIG_DM_REGULATOR
-	ret = regulators_enable_boot_on(false);
-	if (ret)
-		debug("%s: Cannot enable boot on regulator\n", __func__);
-#endif
-
 	return 0;
 }
 

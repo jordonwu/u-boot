@@ -8,7 +8,6 @@
  * Based on Little Kernel driver, simplified
  */
 
-#include <common.h>
 #include <clk-uclass.h>
 #include <dm.h>
 #include <linux/delay.h>
@@ -24,6 +23,7 @@
 #define USB30_PRIM_MASTER_CLK_CMD_RCGR 0xf018
 #define USB30_PRIM_MOCK_UTMI_CLK_CMD_RCGR 0xf030
 #define USB3_PRIM_PHY_AUX_CMD_RCGR 0xf05c
+#define SDCC2_APPS_CLK_CMD_RCGR 0x1400c
 
 static const struct freq_tbl ftbl_gcc_qupv3_wrap0_s0_clk_src[] = {
 	F(7372800, CFG_CLK_SRC_GPLL0_EVEN, 1, 384, 15625),
@@ -44,6 +44,17 @@ static const struct freq_tbl ftbl_gcc_qupv3_wrap0_s0_clk_src[] = {
 	{ }
 };
 
+static const struct freq_tbl ftbl_gcc_sdcc2_apps_clk_src[] = {
+	F(400000, CFG_CLK_SRC_CXO, 12, 1, 4),
+	F(9600000, CFG_CLK_SRC_CXO, 2, 0, 0),
+	F(19200000, CFG_CLK_SRC_CXO, 1, 0, 0),
+	F(25000000, CFG_CLK_SRC_GPLL0_EVEN, 12, 0, 0),
+	F(50000000, CFG_CLK_SRC_GPLL0_EVEN, 6, 0, 0),
+	F(100000000, CFG_CLK_SRC_GPLL0, 6, 0, 0),
+	F(201500000, CFG_CLK_SRC_GPLL4, 4, 0, 0),
+	{ }
+};
+
 static ulong sdm845_clk_set_rate(struct clk *clk, ulong rate)
 {
 	struct msm_clk_priv *priv = dev_get_priv(clk->dev);
@@ -54,6 +65,11 @@ static ulong sdm845_clk_set_rate(struct clk *clk, ulong rate)
 		freq = qcom_find_freq(ftbl_gcc_qupv3_wrap0_s0_clk_src, rate);
 		clk_rcg_set_rate_mnd(priv->base, SE9_UART_APPS_CMD_RCGR,
 				     freq->pre_div, freq->m, freq->n, freq->src, 16);
+		return freq->freq;
+	case GCC_SDCC2_APPS_CLK:
+		freq = qcom_find_freq(ftbl_gcc_sdcc2_apps_clk_src, rate);
+		clk_rcg_set_rate_mnd(priv->base, SDCC2_APPS_CLK_CMD_RCGR,
+				     freq->pre_div, freq->m, freq->n, freq->src, 8);
 		return freq->freq;
 	default:
 		return 0;
@@ -187,6 +203,94 @@ static const struct qcom_power_map sdm845_gdscs[] = {
 	[HLOS1_VOTE_MMNOC_MMU_TBU_SF_GDSC] = { 0x7d044 },
 };
 
+static const phys_addr_t sdm845_gpll_addrs[] = {
+	0x00100000, // GCC_GPLL0_MODE
+	0x00101000, // GCC_GPLL1_MODE
+	0x00102000, // GCC_GPLL2_MODE
+	0x00103000, // GCC_GPLL3_MODE
+	0x00176000, // GCC_GPLL4_MODE
+	0x00174000, // GCC_GPLL5_MODE
+	0x00113000, // GCC_GPLL6_MODE
+};
+
+static const phys_addr_t sdm845_rcg_addrs[] = {
+	0x0010f018, // GCC_USB30_PRIM_MASTER
+	0x0010f030, // GCC_USB30_PRIM_MOCK_UTMI
+	0x0010f05c, // GCC_USB3_PRIM_PHY_AUX
+	0x00110018, // GCC_USB30_SEC_MASTER
+	0x00110030, // GCC_USB30_SEC_MOCK_UTMI
+	0x0011005c, // GCC_USB3_SEC_PHY_AUX
+	0x0011400c, // GCC_SDCC2_APPS
+	0x0011600c, // GCC_SDCC4_APPS
+	0x00117018, // GCC_QUPV3_WRAP0_CORE_2X
+	0x00117034, // GCC_QUPV3_WRAP0_S0
+	0x00117164, // GCC_QUPV3_WRAP0_S1
+	0x00117294, // GCC_QUPV3_WRAP0_S2
+	0x001173c4, // GCC_QUPV3_WRAP0_S3
+	0x001174f4, // GCC_QUPV3_WRAP0_S4
+	0x00117624, // GCC_QUPV3_WRAP0_S5
+	0x00117754, // GCC_QUPV3_WRAP0_S6
+	0x00117884, // GCC_QUPV3_WRAP0_S7
+	0x00118018, // GCC_QUPV3_WRAP1_S0
+	0x00118148, // GCC_QUPV3_WRAP1_S1
+	0x00118278, // GCC_QUPV3_WRAP1_S2
+	0x001183a8, // GCC_QUPV3_WRAP1_S3
+	0x001184d8, // GCC_QUPV3_WRAP1_S4
+	0x00118608, // GCC_QUPV3_WRAP1_S5
+	0x00118738, // GCC_QUPV3_WRAP1_S6
+	0x00118868, // GCC_QUPV3_WRAP1_S7
+	0x0016b028, // GCC_PCIE_0_AUX
+	0x0018d028, // GCC_PCIE_1_AUX
+	0x0016f014, // GCC_PCIE_PHY_REFGEN
+	0x0017501c, // GCC_UFS_CARD_AXI
+	0x0017505c, // GCC_UFS_CARD_ICE_CORE
+	0x00175074, // GCC_UFS_CARD_UNIPRO_CORE
+	0x00175090, // GCC_UFS_CARD_PHY_AUX
+	0x0017701c, // GCC_UFS_PHY_AXI
+	0x0017705c, // GCC_UFS_PHY_ICE_CORE
+	0x00177074, // GCC_UFS_PHY_UNIPRO_CORE
+	0x00177090, // GCC_UFS_PHY_PHY_AUX
+};
+
+static const char *const sdm845_rcg_names[] = {
+	"GCC_USB30_PRIM_MASTER",
+	"GCC_USB30_PRIM_MOCK_UTMI",
+	"GCC_USB3_PRIM_PHY_AUX",
+	"GCC_USB30_SEC_MASTER",
+	"GCC_USB30_SEC_MOCK_UTMI",
+	"GCC_USB3_SEC_PHY_AUX",
+	"GCC_SDCC2_APPS",
+	"GCC_SDCC4_APPS",
+	"GCC_QUPV3_WRAP0_CORE_2X",
+	"GCC_QUPV3_WRAP0_S0",
+	"GCC_QUPV3_WRAP0_S1",
+	"GCC_QUPV3_WRAP0_S2",
+	"GCC_QUPV3_WRAP0_S3",
+	"GCC_QUPV3_WRAP0_S4",
+	"GCC_QUPV3_WRAP0_S5",
+	"GCC_QUPV3_WRAP0_S6",
+	"GCC_QUPV3_WRAP0_S7",
+	"GCC_QUPV3_WRAP1_S0",
+	"GCC_QUPV3_WRAP1_S1",
+	"GCC_QUPV3_WRAP1_S2",
+	"GCC_QUPV3_WRAP1_S3",
+	"GCC_QUPV3_WRAP1_S4",
+	"GCC_QUPV3_WRAP1_S5",
+	"GCC_QUPV3_WRAP1_S6",
+	"GCC_QUPV3_WRAP1_S7",
+	"GCC_PCIE_0_AUX",
+	"GCC_PCIE_1_AUX",
+	"GCC_PCIE_PHY_REFGEN",
+	"GCC_UFS_CARD_AXI",
+	"GCC_UFS_CARD_ICE_CORE",
+	"GCC_UFS_CARD_UNIPRO_CORE",
+	"GCC_UFS_CARD_PHY_AUX",
+	"GCC_UFS_PHY_AXI",
+	"GCC_UFS_PHY_ICE_CORE",
+	"GCC_UFS_PHY_UNIPRO_CORE",
+	"GCC_UFS_PHY_PHY_AUX",
+};
+
 static struct msm_clk_data sdm845_clk_data = {
 	.resets = sdm845_gcc_resets,
 	.num_resets = ARRAY_SIZE(sdm845_gcc_resets),
@@ -197,6 +301,11 @@ static struct msm_clk_data sdm845_clk_data = {
 
 	.enable = sdm845_clk_enable,
 	.set_rate = sdm845_clk_set_rate,
+	.dbg_pll_addrs = sdm845_gpll_addrs,
+	.num_plls = ARRAY_SIZE(sdm845_gpll_addrs),
+	.dbg_rcg_addrs = sdm845_rcg_addrs,
+	.num_rcgs = ARRAY_SIZE(sdm845_rcg_addrs),
+	.dbg_rcg_names = sdm845_rcg_names,
 };
 
 static const struct udevice_id gcc_sdm845_of_match[] = {

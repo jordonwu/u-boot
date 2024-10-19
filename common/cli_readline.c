@@ -8,7 +8,6 @@
  * JinHua Luo, GuangDong Linux Center, <luo.jinhua@gd-linux.com>
  */
 
-#include <common.h>
 #include <bootretry.h>
 #include <cli.h>
 #include <command.h>
@@ -16,6 +15,7 @@
 #include <malloc.h>
 #include <time.h>
 #include <watchdog.h>
+#include <linux/errno.h>
 #include <asm/global_data.h>
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -73,7 +73,7 @@ static char *delete_char (char *buffer, char *p, int *colp, int *np, int plen)
 #define getcmd_getch()		getchar()
 #define getcmd_cbeep()		getcmd_putch('\a')
 
-#ifdef CONFIG_SPL_BUILD
+#ifdef CONFIG_XPL_BUILD
 #define HIST_MAX		3
 #define HIST_SIZE		32
 #else

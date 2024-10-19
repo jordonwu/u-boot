@@ -5,7 +5,6 @@
  */
 
 #ifndef USE_HOSTCC
-#include <common.h>
 #include <bootm.h>
 #include <bootstage.h>
 #include <cli.h>
@@ -25,6 +24,7 @@
 #include <asm/io.h>
 #include <linux/sizes.h>
 #include <tpm-v2.h>
+#include <tpm_tcg2.h>
 #if defined(CONFIG_CMD_USB)
 #include <usb.h>
 #endif
@@ -239,29 +239,10 @@ static int boot_get_kernel(const char *addr_fit, struct bootm_headers *images,
 	return 0;
 }
 
-#ifdef CONFIG_LMB
-static void boot_start_lmb(struct bootm_headers *images)
-{
-	phys_addr_t	mem_start;
-	phys_size_t	mem_size;
-
-	mem_start = env_get_bootm_low();
-	mem_size = env_get_bootm_size();
-
-	lmb_init_and_reserve_range(&images->lmb, mem_start,
-				   mem_size, NULL);
-}
-#else
-#define lmb_reserve(lmb, base, size)
-static inline void boot_start_lmb(struct bootm_headers *images) { }
-#endif
-
 static int bootm_start(void)
 {
 	memset((void *)&images, 0, sizeof(images));
 	images.verify = env_get_yesno("verify");
-
-	boot_start_lmb(&images);
 
 	bootstage_mark_name(BOOTSTAGE_ID_BOOTM_START, "bootm_start");
 	images.state = BOOTM_STATE_START;
@@ -640,7 +621,7 @@ static int bootm_load_os(struct bootm_headers *images, int boot_progress)
 	if (os.type == IH_TYPE_KERNEL_NOLOAD && os.comp != IH_COMP_NONE) {
 		ulong req_size = ALIGN(image_len * 4, SZ_1M);
 
-		load = lmb_alloc(&images->lmb, req_size, SZ_2M);
+		load = lmb_alloc(req_size, SZ_2M);
 		if (!load)
 			return 1;
 		os.load = load;
@@ -703,7 +684,7 @@ static int bootm_load_os(struct bootm_headers *images, int boot_progress)
 
 		/* Handle BOOTM_STATE_LOADOS */
 		if (relocated_addr != load) {
-			printf("Moving Image from 0x%lx to 0x%lx, end=%lx\n",
+			printf("Moving Image from 0x%lx to 0x%lx, end=0x%lx\n",
 			       load, relocated_addr,
 			       relocated_addr + image_size);
 			memmove((void *)relocated_addr, load_buf, image_size);
@@ -714,8 +695,9 @@ static int bootm_load_os(struct bootm_headers *images, int boot_progress)
 		images->os.end = relocated_addr + image_size;
 	}
 
-	lmb_reserve(&images->lmb, images->os.load, (load_end -
-						    images->os.load));
+	if (CONFIG_IS_ENABLED(LMB))
+		lmb_reserve(images->os.load, (load_end - images->os.load));
+
 	return 0;
 }
 
@@ -740,18 +722,6 @@ ulong bootm_disable_interrupts(void)
 	eth_halt();
 #endif
 
-#if defined(CONFIG_CMD_USB)
-	/*
-	 * turn off USB to prevent the host controller from writing to the
-	 * SDRAM while Linux is booting. This could happen (at least for OHCI
-	 * controller), because the HCCA (Host Controller Communication Area)
-	 * lies within the SDRAM and the host controller writes continously to
-	 * this area (as busmaster!). The HccaFrameNumber is for example
-	 * updated every 1 ms within the HCCA structure in SDRAM! For more
-	 * details see the OpenHCI specification.
-	 */
-	usb_stop();
-#endif
 	return iflag;
 }
 
@@ -964,7 +934,7 @@ int bootm_measure(struct bootm_headers *images)
 			goto unmap_initrd;
 
 		if (IS_ENABLED(CONFIG_MEASURE_DEVICETREE)) {
-			ret = tcg2_measure_data(dev, &elog, 0, images->ft_len,
+			ret = tcg2_measure_data(dev, &elog, 1, images->ft_len,
 						(u8 *)images->ft_addr,
 						EV_TABLE_OF_DEVICES,
 						strlen("dts") + 1,
@@ -1041,19 +1011,19 @@ int bootm_run_states(struct bootm_info *bmi, int states)
 	if (!ret && (states & BOOTM_STATE_RAMDISK)) {
 		ulong rd_len = images->rd_end - images->rd_start;
 
-		ret = boot_ramdisk_high(&images->lmb, images->rd_start,
-			rd_len, &images->initrd_start, &images->initrd_end);
+		ret = boot_ramdisk_high(images->rd_start, rd_len,
+					&images->initrd_start,
+					&images->initrd_end);
 		if (!ret) {
 			env_set_hex("initrd_start", images->initrd_start);
 			env_set_hex("initrd_end", images->initrd_end);
 		}
 	}
 #endif
-#if CONFIG_IS_ENABLED(OF_LIBFDT) && defined(CONFIG_LMB)
+#if CONFIG_IS_ENABLED(OF_LIBFDT) && CONFIG_IS_ENABLED(LMB)
 	if (!ret && (states & BOOTM_STATE_FDT)) {
-		boot_fdt_add_mem_rsv_regions(&images->lmb, images->ft_addr);
-		ret = boot_relocate_fdt(&images->lmb, &images->ft_addr,
-					&images->ft_len);
+		boot_fdt_add_mem_rsv_regions(images->ft_addr);
+		ret = boot_relocate_fdt(&images->ft_addr, &images->ft_len);
 	}
 #endif
 

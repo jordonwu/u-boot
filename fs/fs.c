@@ -9,7 +9,6 @@
 #include <config.h>
 #include <display_options.h>
 #include <errno.h>
-#include <common.h>
 #include <env.h>
 #include <lmb.h>
 #include <log.h>
@@ -21,6 +20,7 @@
 #include <fs.h>
 #include <sandboxfs.h>
 #include <semihostingfs.h>
+#include <time.h>
 #include <ubifs_uboot.h>
 #include <btrfs.h>
 #include <asm/global_data.h>
@@ -224,7 +224,7 @@ static struct fstype_info fstypes[] = {
 		.exists = ext4fs_exists,
 		.size = ext4fs_size,
 		.read = ext4_read_file,
-#ifdef CONFIG_CMD_EXT4_WRITE
+#ifdef CONFIG_EXT4_WRITE
 		.write = ext4_write_file,
 		.ln = ext4fs_create_link,
 #else
@@ -237,7 +237,7 @@ static struct fstype_info fstypes[] = {
 		.mkdir = fs_mkdir_unsupported,
 	},
 #endif
-#if IS_ENABLED(CONFIG_SANDBOX) && !IS_ENABLED(CONFIG_SPL_BUILD)
+#if IS_ENABLED(CONFIG_SANDBOX) && !IS_ENABLED(CONFIG_XPL_BUILD)
 	{
 		.fstype = FS_TYPE_SANDBOX,
 		.name = "sandbox",
@@ -275,7 +275,7 @@ static struct fstype_info fstypes[] = {
 		.ln = fs_ln_unsupported,
 	},
 #endif
-#ifndef CONFIG_SPL_BUILD
+#ifndef CONFIG_XPL_BUILD
 #ifdef CONFIG_CMD_UBIFS
 	{
 		.fstype = FS_TYPE_UBIFS,
@@ -296,7 +296,7 @@ static struct fstype_info fstypes[] = {
 	},
 #endif
 #endif
-#ifndef CONFIG_SPL_BUILD
+#ifndef CONFIG_XPL_BUILD
 #ifdef CONFIG_FS_BTRFS
 	{
 		.fstype = FS_TYPE_BTRFS,
@@ -526,12 +526,11 @@ int fs_size(const char *filename, loff_t *size)
 	return ret;
 }
 
-#ifdef CONFIG_LMB
+#if CONFIG_IS_ENABLED(LMB)
 /* Check if a file may be read to the given address */
 static int fs_read_lmb_check(const char *filename, ulong addr, loff_t offset,
 			     loff_t len, struct fstype_info *info)
 {
-	struct lmb lmb;
 	int ret;
 	loff_t size;
 	loff_t read_len;
@@ -550,10 +549,9 @@ static int fs_read_lmb_check(const char *filename, ulong addr, loff_t offset,
 	if (len && len < read_len)
 		read_len = len;
 
-	lmb_init_and_reserve(&lmb, gd->bd, (void *)gd->fdt_blob);
-	lmb_dump_all(&lmb);
+	lmb_dump_all();
 
-	if (lmb_alloc_addr(&lmb, addr, read_len) == addr)
+	if (lmb_alloc_addr(addr, read_len) == addr)
 		return 0;
 
 	log_err("** Reading file would overwrite reserved memory **\n");
@@ -568,7 +566,7 @@ static int _fs_read(const char *filename, ulong addr, loff_t offset, loff_t len,
 	void *buf;
 	int ret;
 
-#ifdef CONFIG_LMB
+#if CONFIG_IS_ENABLED(LMB)
 	if (do_lmb_check) {
 		ret = fs_read_lmb_check(filename, addr, offset, len, info);
 		if (ret)

@@ -18,7 +18,6 @@
  * src/arch/x86/lib/cpu.c
  */
 
-#include <common.h>
 #include <cpu_func.h>
 #include <init.h>
 #include <log.h>
@@ -32,6 +31,7 @@
 #include <asm/msr.h>
 #include <asm/mtrr.h>
 #include <asm/processor-flags.h>
+#include <asm/u-boot-x86.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -271,7 +271,7 @@ static void identify_cpu(struct cpu_device_id *cpu)
 	 * Do a quick and dirty check to save space - Intel and AMD only and
 	 * just the vendor. This is enough for most TPL code.
 	 */
-	if (spl_phase() == PHASE_TPL) {
+	if (xpl_phase() == PHASE_TPL) {
 		struct cpuid_result result;
 
 		result = cpuid(0x00000000);
@@ -412,12 +412,6 @@ int cpu_phys_address_size(void)
 	return 32;
 }
 
-/* Don't allow PCI region 3 to use memory in the 2-4GB memory hole */
-static void setup_pci_ram_top(void)
-{
-	gd_set_pci_ram_top(0x80000000U);
-}
-
 static void setup_mtrr(void)
 {
 	u64 mtrr_cap;
@@ -469,7 +463,6 @@ int x86_cpu_init_f(void)
 		setup_cpu_features();
 	setup_identity();
 	setup_mtrr();
-	setup_pci_ram_top();
 
 	/* Set up the i8254 timer if required */
 	if (IS_ENABLED(CONFIG_I8254_TIMER))
@@ -483,7 +476,6 @@ int x86_cpu_reinit_f(void)
 	long addr;
 
 	setup_identity();
-	setup_pci_ram_top();
 	addr = locate_coreboot_table();
 	if (addr >= 0) {
 		gd->arch.coreboot_table = addr;

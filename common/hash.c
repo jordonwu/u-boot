@@ -10,7 +10,6 @@
  */
 
 #ifndef USE_HOSTCC
-#include <common.h>
 #include <command.h>
 #include <env.h>
 #include <log.h>
@@ -404,7 +403,7 @@ int hash_block(const char *algo_name, const void *data, unsigned int len,
 	return 0;
 }
 
-#if !defined(CONFIG_SPL_BUILD) && (defined(CONFIG_CMD_HASH) || \
+#if !defined(CONFIG_XPL_BUILD) && (defined(CONFIG_CMD_HASH) || \
 	defined(CONFIG_CMD_SHA1SUM) || defined(CONFIG_CMD_CRC32)) || \
 	defined(CONFIG_CMD_MD5SUM)
 /**

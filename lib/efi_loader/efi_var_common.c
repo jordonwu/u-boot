@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0+
 /*
  * UEFI runtime variable services
  *
@@ -163,11 +162,6 @@ efi_status_t EFIAPI efi_query_variable_info(
 	EFI_ENTRY("%x %p %p %p", attributes, maximum_variable_storage_size,
 		  remaining_variable_storage_size, maximum_variable_size);
 
-	if (!maximum_variable_storage_size ||
-	    !remaining_variable_storage_size ||
-	    !maximum_variable_size)
-		return EFI_EXIT(EFI_INVALID_PARAMETER);
-
 	ret = efi_query_variable_info_int(attributes,
 					  maximum_variable_storage_size,
 					  remaining_variable_storage_size,
@@ -182,7 +176,8 @@ efi_get_variable_runtime(u16 *variable_name, const efi_guid_t *guid,
 {
 	efi_status_t ret;
 
-	ret = efi_get_variable_mem(variable_name, guid, attributes, data_size, data, NULL);
+	ret = efi_get_variable_mem(variable_name, guid, attributes, data_size,
+				   data, NULL, EFI_VARIABLE_RUNTIME_ACCESS);
 
 	/* Remove EFI_VARIABLE_READ_ONLY flag */
 	if (attributes)
@@ -195,7 +190,8 @@ efi_status_t __efi_runtime EFIAPI
 efi_get_next_variable_name_runtime(efi_uintn_t *variable_name_size,
 				   u16 *variable_name, efi_guid_t *guid)
 {
-	return efi_get_next_variable_name_mem(variable_name_size, variable_name, guid);
+	return efi_get_next_variable_name_mem(variable_name_size, variable_name,
+					      guid, EFI_VARIABLE_RUNTIME_ACCESS);
 }
 
 /**
@@ -419,7 +415,7 @@ void *efi_get_var(const u16 *name, const efi_guid_t *vendor, efi_uintn_t *size)
 }
 
 /**
- * efi_var_collect() - Copy EFI variables mstching attributes mask
+ * efi_var_collect() - Copy EFI variables matching attributes mask
  *
  * @bufp:	buffer containing variable collection
  * @lenp:	buffer length

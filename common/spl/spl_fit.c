@@ -4,7 +4,6 @@
  * Written by Simon Glass <sjg@chromium.org>
  */
 
-#include <common.h>
 #include <errno.h>
 #include <fpga.h>
 #include <gzip.h>
@@ -13,6 +12,7 @@
 #include <memalign.h>
 #include <mapmem.h>
 #include <spl.h>
+#include <upl.h>
 #include <sysinfo.h>
 #include <asm/global_data.h>
 #include <asm/io.h>
@@ -337,6 +337,8 @@ static int load_simple_fit(struct spl_load_info *info, ulong fit_offset,
 			image_info->entry_point = FDT_ERROR;
 	}
 
+	upl_add_image(fit, node, load_addr, length);
+
 	return 0;
 }
 
@@ -588,7 +590,7 @@ __weak void *spl_load_simple_fit_fix_load(const void *fit)
 static void warn_deprecated(const char *msg)
 {
 	printf("DEPRECATED: %s\n", msg);
-	printf("\tSee doc/uImage.FIT/source_file_format.txt\n");
+	printf("\tSee https://fitspec.osfw.foundation/\n");
 }
 
 static int spl_fit_upload_fpga(struct spl_fit_info *ctx, int node,
@@ -848,6 +850,8 @@ int spl_load_simple_fit(struct spl_image_info *spl_image,
 		spl_image->entry_point = spl_image->load_addr;
 
 	spl_image->flags |= SPL_FIT_FOUND;
+	upl_set_fit_info(map_to_sysmem(ctx.fit), ctx.conf_node,
+			 spl_image->entry_point);
 
 	return 0;
 }
@@ -900,7 +904,7 @@ int spl_load_fit_image(struct spl_image_info *spl_image,
 		spl_image->os = IH_OS_INVALID;
 	spl_image->name = genimg_get_os_name(spl_image->os);
 
-	debug(SPL_TPL_PROMPT "payload image: %32s load addr: 0x%lx size: %d\n",
+	debug(PHASE_PROMPT "payload image: %32s load addr: 0x%lx size: %d\n",
 	      spl_image->name, spl_image->load_addr, spl_image->size);
 
 #ifdef CONFIG_SPL_FIT_SIGNATURE
@@ -942,6 +946,10 @@ int spl_load_fit_image(struct spl_image_info *spl_image,
 		if (ret < 0)
 			return ret;
 	}
+	spl_image->flags |= SPL_FIT_FOUND;
+
+	upl_set_fit_info(map_to_sysmem(header), conf_noffset,
+			 spl_image->entry_point);
 
 	return 0;
 }

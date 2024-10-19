@@ -13,8 +13,10 @@
 
 MEMORY { .sram : ORIGIN = IMAGE_TEXT_BASE,
 		LENGTH = IMAGE_MAX_SIZE }
+#ifdef CONFIG_SPL_SEPARATE_BSS
 MEMORY { .sdram : ORIGIN = CONFIG_SPL_BSS_START_ADDR,
 		LENGTH = CONFIG_SPL_BSS_MAX_SIZE }
+#endif
 
 OUTPUT_FORMAT("elf64-littleaarch64", "elf64-littleaarch64", "elf64-littleaarch64")
 OUTPUT_ARCH(aarch64)
@@ -53,20 +55,25 @@ SECTIONS
 
 	. = ALIGN(8);
 	__image_copy_end = .;
-
-	.end : {
-		. = ALIGN(8);
-		*(.__end)
-	} >.sram
-
+	_end = .;
 	_image_binary_end = .;
 
+#ifdef CONFIG_SPL_SEPARATE_BSS
 	.bss : {
 		__bss_start = .;
 		*(.bss*)
 		. = ALIGN(8);
 		__bss_end = .;
 	} >.sdram
+#else
+	.bss (NOLOAD) : {
+		__bss_start = .;
+		*(.bss*)
+		 . = ALIGN(8);
+		__bss_end = .;
+	} >.sram
+#endif
+	__bss_size = __bss_end - __bss_start;
 
 	/DISCARD/ : { *(.rela*) }
 	/DISCARD/ : { *(.dynsym) }

@@ -99,7 +99,6 @@ struct virt_internal_data {
 	int dev_num;
 };
 
-
 #if defined(CONFIG_DFU_NAME_MAX_SIZE)
 #define DFU_NAME_SIZE			CONFIG_DFU_NAME_MAX_SIZE
 #else
@@ -518,6 +517,7 @@ static inline int dfu_fill_entity_virt(struct dfu_entity *dfu, char *devstr,
 #endif
 
 extern bool dfu_reinit_needed;
+extern bool dfu_alt_info_changed;
 
 #if CONFIG_IS_ENABLED(DFU_WRITE_ALT)
 /**

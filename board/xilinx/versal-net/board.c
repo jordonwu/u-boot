@@ -6,13 +6,13 @@
  * Michal Simek <michal.simek@amd.com>
  */
 
-#include <common.h>
 #include <cpu_func.h>
 #include <fdtdec.h>
 #include <init.h>
 #include <env_internal.h>
 #include <log.h>
 #include <malloc.h>
+#include <spi.h>
 #include <time.h>
 #include <asm/cache.h>
 #include <asm/global_data.h>
@@ -192,6 +192,47 @@ static u8 versal_net_get_bootmode(void)
 	bootmode = reg & BOOT_MODES_MASK;
 
 	return bootmode;
+}
+
+int spi_get_env_dev(void)
+{
+	struct udevice *dev;
+	int bootseq = -1;
+
+	switch (versal_net_get_bootmode()) {
+	case QSPI_MODE_24BIT:
+		puts("QSPI_MODE_24\n");
+		if (uclass_get_device_by_name(UCLASS_SPI,
+					      "spi@f1030000", &dev)) {
+			debug("QSPI driver for QSPI device is not present\n");
+			break;
+		}
+		bootseq = dev_seq(dev);
+		break;
+	case QSPI_MODE_32BIT:
+		puts("QSPI_MODE_32\n");
+		if (uclass_get_device_by_name(UCLASS_SPI,
+					      "spi@f1030000", &dev)) {
+			debug("QSPI driver for QSPI device is not present\n");
+			break;
+		}
+		bootseq = dev_seq(dev);
+		break;
+	case OSPI_MODE:
+		puts("OSPI_MODE\n");
+		if (uclass_get_device_by_name(UCLASS_SPI,
+					      "spi@f1010000", &dev)) {
+			debug("OSPI driver for OSPI device is not present\n");
+			break;
+		}
+		bootseq = dev_seq(dev);
+		break;
+	default:
+		break;
+	}
+
+	debug("bootseq %d\n", bootseq);
+	return bootseq;
 }
 
 static int boot_targets_setup(void)

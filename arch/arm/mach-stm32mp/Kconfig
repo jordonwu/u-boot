@@ -39,6 +39,7 @@ choice
 
 config STM32MP13X
 	bool "Support STMicroelectronics STM32MP13x Soc"
+	select ARCH_EARLY_INIT_R
 	select ARM_SMCCC
 	select CPU_V7A
 	select CPU_V7_HAS_NONSEC
@@ -57,6 +58,7 @@ config STM32MP13X
 
 config STM32MP15X
 	bool "Support STMicroelectronics STM32MP15x Soc"
+	select ARCH_EARLY_INIT_R
 	select ARCH_SUPPORT_PSCI
 	select BINMAN
 	select CPU_V7A
@@ -155,4 +157,21 @@ source "arch/arm/mach-stm32mp/Kconfig.13x"
 source "arch/arm/mach-stm32mp/Kconfig.15x"
 source "arch/arm/mach-stm32mp/Kconfig.25x"
 source "arch/arm/mach-stm32mp/cmd_stm32prog/Kconfig"
+
+config STM32MP15_PWR
+	bool "Enable driver for STM32MP15x PWR"
+	depends on DM_REGULATOR && DM_PMIC && (STM32MP13X || STM32MP15X)
+	default y if STM32MP15X
+	help
+		This config enables implementation of driver-model pmic and
+		regulator uclass features for access to STM32MP15x PWR.
+
+config SPL_STM32MP15_PWR
+	bool "Enable driver for STM32MP15x PWR in SPL"
+	depends on SPL && SPL_DM_REGULATOR && SPL_DM_PMIC && (STM32MP13X || STM32MP15X)
+	default y if STM32MP15X
+	help
+		This config enables implementation of driver-model pmic and
+		regulator uclass features for access to STM32MP15x PWR in SPL.
+
 endif

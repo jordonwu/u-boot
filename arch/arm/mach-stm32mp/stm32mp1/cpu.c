@@ -5,7 +5,6 @@
 
 #define LOG_CATEGORY LOGC_ARCH
 
-#include <common.h>
 #include <clk.h>
 #include <cpu_func.h>
 #include <debug_uart.h>
@@ -30,8 +29,6 @@
  * with 16kB allignment (see TTBR0_BASE_ADDR_MASK)
  */
 u8 early_tlb[PGTABLE_SIZE] __section(".data") __aligned(0x4000);
-
-struct lmb lmb;
 
 u32 get_bootmode(void)
 {
@@ -60,7 +57,7 @@ void dram_bank_mmu_setup(int bank)
 	bool use_lmb = false;
 	enum dcache_option option;
 
-	if (IS_ENABLED(CONFIG_SPL_BUILD)) {
+	if (IS_ENABLED(CONFIG_XPL_BUILD)) {
 /* STM32_SYSRAM_BASE exist only when SPL is supported */
 #ifdef CONFIG_SPL
 		start = ALIGN_DOWN(STM32_SYSRAM_BASE, MMU_SECTION_SIZE);
@@ -81,7 +78,7 @@ void dram_bank_mmu_setup(int bank)
 	     i < (start >> MMU_SECTION_SHIFT) + (size >> MMU_SECTION_SHIFT);
 	     i++) {
 		option = DCACHE_DEFAULT_OPTION;
-		if (use_lmb && lmb_is_reserved_flags(&lmb, i << MMU_SECTION_SHIFT, LMB_NOMAP))
+		if (use_lmb && lmb_is_reserved_flags(i << MMU_SECTION_SHIFT, LMB_NOMAP))
 			option = 0; /* INVALID ENTRY in TLB */
 		set_section_dcache(i, option);
 	}
@@ -136,7 +133,7 @@ int mach_cpu_init(void)
 	if (IS_ENABLED(CONFIG_CMD_STM32PROG_SERIAL) &&
 	    (boot_mode & TAMP_BOOT_DEVICE_MASK) == BOOT_SERIAL_UART)
 		gd->flags |= GD_FLG_SILENT | GD_FLG_DISABLE_CONSOLE;
-	else if (IS_ENABLED(CONFIG_DEBUG_UART) && IS_ENABLED(CONFIG_SPL_BUILD))
+	else if (IS_ENABLED(CONFIG_DEBUG_UART) && IS_ENABLED(CONFIG_XPL_BUILD))
 		debug_uart_init();
 
 	return 0;
@@ -144,11 +141,13 @@ int mach_cpu_init(void)
 
 void enable_caches(void)
 {
-	/* parse device tree when data cache is still activated */
-	lmb_init_and_reserve(&lmb, gd->bd, (void *)gd->fdt_blob);
-
 	/* I-cache is already enabled in start.S: icache_enable() not needed */
 
+	/* keep D-cache configuration done before relocation, wait arch_early_init_r*/
+}
+
+int arch_early_init_r(void)
+{
 	/* deactivate the data cache, early enabled in arch_cpu_init() */
 	dcache_disable();
 	/*
@@ -156,6 +155,8 @@ void enable_caches(void)
 	 * warning: the TLB location udpated in board_f.c::reserve_mmu
 	 */
 	dcache_enable();
+
+	return 0;
 }
 
 static void setup_boot_mode(void)
@@ -345,7 +346,7 @@ uintptr_t get_stm32mp_bl2_dtb(void)
 	return nt_fw_dtb;
 }
 
-#ifdef CONFIG_SPL_BUILD
+#ifdef CONFIG_XPL_BUILD
 void __noreturn jump_to_image_no_args(struct spl_image_info *spl_image)
 {
 	typedef void __noreturn (*image_entry_stm32_t)(u32 romapi);

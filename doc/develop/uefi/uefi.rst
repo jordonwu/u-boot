@@ -72,7 +72,7 @@ bootm command. This feature is available if U-Boot is configured with::
 
     CONFIG_BOOTM_EFI=y
 
-A sample configuration is provided as file doc/uImage.FIT/uefi.its.
+A sample configuration is provided in :doc:`../../usage/fit/uefi`.
 
 Below you find the output of an example session starting GRUB::
 
@@ -96,7 +96,7 @@ Below you find the output of an example session starting GRUB::
     ## Transferring control to EFI (at address 404000d0) ...
     Welcome to GRUB!
 
-See doc/uImage.FIT/howto.txt for an introduction to FIT images.
+See :doc:`../../usage/fit/howto` for an introduction to FIT images.
 
 Configuring UEFI secure boot
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -449,6 +449,33 @@ practice. Getting this information from the firmware itself is more
 secure, assuming the firmware has been verified by a previous stage
 boot loader.
 
+Dynamic Firmware Update GUIDs
+*****************************
+
+The image_type_id contains a GUID value which is specific to the image
+and board being updated, that is to say it should uniquely identify the
+board model (and revision if relevant) and image pair. Traditionally,
+these GUIDs are generated manually and hardcoded on a per-board basis,
+however this scheme makes it difficult to scale up to support many
+boards.
+
+To address this, v5 GUIDs can be used to generate board-specific GUIDs
+at runtime, based on the board's devicetree root compatible
+(e.g. "qcom,qrb5165-rb5").
+
+These strings are combined with the fw_image name to generate GUIDs for
+each image. Support for dynamic UUIDs can be enabled by generating a new
+namespace UUID and setting EFI_CAPSULE_NAMESPACE_GUID to it. Dynamic GUID
+generation is only enabled if the image_type_id property is unset for your
+firmware images, this is to avoid breaking existing boards with hardcoded
+GUIDs.
+
+The mkeficapsule tool can be used to determine the GUIDs for a particular
+board and image. It can be found in the tools directory.
+
+Firmware update images
+**********************
+
 The firmware images structure defines the GUID values, image index
 values and the name of the images that are to be updated through
 the capsule update feature. These values are to be defined as part of
@@ -580,10 +607,10 @@ and used by the steps highlighted below.
     }
 
 You can perform step-4 through the Kconfig symbol
-CONFIG_EFI_CAPSULE_ESL_FILE. This symbol points to the esl file
-generated in step-2. Once the symbol has been populated with the path
-to the esl file, it will automatically get embedded into the
-platform's dtb as part of U-Boot build.
+CONFIG_EFI_CAPSULE_CRT_FILE. This symbol points to the signing key
+generated in step-2. As part of U-Boot build, the ESL certificate file will
+be generated from the signing key and automatically get embedded into the
+platform's dtb.
 
 Anti-rollback Protection
 ************************
@@ -630,6 +657,18 @@ where version.dtso looks like::
 
 The properties of image-type-id and image-index must match the value
 defined in the efi_fw_image array as image_type_id and image_index.
+
+Porting Capsule Updates to new boards
+*************************************
+
+It is important, when using a reference board as a starting point for a custom
+board, that certain steps are taken to properly support Capsule Updates.
+
+Capsule GUIDs need to be unique for each firmware and board. That is, if two
+firmwares are built from the same source but result in different binaries
+because they are built for different boards, they should have different GUIDs.
+Therefore it is important when creating support for a new board, new GUIDs are
+defined in the board's header file.  *DO NOT* reuse capsule GUIDs.
 
 Executing the boot manager
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -681,7 +720,7 @@ Executing the built in hello world application
 
 A hello world UEFI application can be built with::
 
-    CONFIG_CMD_BOOTEFI_HELLO_COMPILE=y
+    CONFIG_BOOTEFI_HELLO_COMPILE=y
 
 It can be embedded into the U-Boot binary with::
 

@@ -7,7 +7,6 @@
  * Based on Linux driver
  */
 
-#include <common.h>
 #include <clk.h>
 #include <dm.h>
 #include <malloc.h>
@@ -33,8 +32,7 @@
 #define SDCC_MCI_STATUS2_MCI_ACT 0x1
 #define SDCC_MCI_HC_MODE 0x78
 
-/* Non standard (?) SDHCI register */
-#define SDHCI_VENDOR_SPEC_CAPABILITIES0  0x11c
+#define CORE_VENDOR_SPEC_POR_VAL 0xa9c
 
 struct msm_sdhc_plat {
 	struct mmc_config cfg;
@@ -49,6 +47,9 @@ struct msm_sdhc {
 
 struct msm_sdhc_variant_info {
 	bool mci_removed;
+
+	u32 core_vendor_spec;
+	u32 core_vendor_spec_capabilities0;
 };
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -56,14 +57,17 @@ DECLARE_GLOBAL_DATA_PTR;
 static int msm_sdc_clk_init(struct udevice *dev)
 {
 	struct msm_sdhc *prv = dev_get_priv(dev);
+	const struct msm_sdhc_variant_info *var_info;
 	ofnode node = dev_ofnode(dev);
 	ulong clk_rate;
 	int ret, i = 0, n_clks;
 	const char *clk_name;
 
+	var_info = (void *)dev_get_driver_data(dev);
+
 	ret = ofnode_read_u32(node, "clock-frequency", (uint *)(&clk_rate));
 	if (ret)
-		clk_rate = 400000;
+		clk_rate = 201500000;
 
 	ret = clk_get_bulk(dev, &prv->clks);
 	if (ret) {
@@ -107,6 +111,9 @@ static int msm_sdc_clk_init(struct udevice *dev)
 		return -EINVAL;
 	}
 
+	writel_relaxed(CORE_VENDOR_SPEC_POR_VAL,
+		       prv->host.ioaddr + var_info->core_vendor_spec);
+
 	return 0;
 }
 
@@ -115,7 +122,6 @@ static int msm_sdc_mci_init(struct msm_sdhc *prv)
 	/* Reset the core and Enable SDHC mode */
 	writel(readl(prv->base + SDCC_MCI_POWER) | SDCC_MCI_POWER_SW_RST,
 	       prv->base + SDCC_MCI_POWER);
-
 
 	/* Wait for reset to be written to register */
 	if (wait_for_bit_le32(prv->base + SDCC_MCI_STATUS2,
@@ -174,6 +180,8 @@ static int msm_sdc_probe(struct udevice *dev)
 
 	core_minor = core_version & SDCC_VERSION_MINOR_MASK;
 
+	log_debug("SDCC version %d.%d\n", core_major, core_minor);
+
 	/*
 	 * Support for some capabilities is not advertised by newer
 	 * controller versions and must be explicitly enabled.
@@ -181,7 +189,7 @@ static int msm_sdc_probe(struct udevice *dev)
 	if (core_major >= 1 && core_minor != 0x11 && core_minor != 0x12) {
 		caps = readl(host->ioaddr + SDHCI_CAPABILITIES);
 		caps |= SDHCI_CAN_VDD_300 | SDHCI_CAN_DO_8BIT;
-		writel(caps, host->ioaddr + SDHCI_VENDOR_SPEC_CAPABILITIES0);
+		writel(caps, host->ioaddr + var_info->core_vendor_spec_capabilities0);
 	}
 
 	ret = mmc_of_parse(dev, &plat->cfg);
@@ -207,7 +215,7 @@ static int msm_sdc_remove(struct udevice *dev)
 	var_info = (void *)dev_get_driver_data(dev);
 
 	/* Disable host-controller mode */
-	if (!var_info->mci_removed)
+	if (!var_info->mci_removed && priv->base)
 		writel(0, priv->base + SDCC_MCI_HC_MODE);
 
 	clk_release_bulk(&priv->clks);
@@ -217,20 +225,30 @@ static int msm_sdc_remove(struct udevice *dev)
 
 static int msm_of_to_plat(struct udevice *dev)
 {
-	struct udevice *parent = dev->parent;
 	struct msm_sdhc *priv = dev_get_priv(dev);
+	const struct msm_sdhc_variant_info *var_info;
 	struct sdhci_host *host = &priv->host;
-	int node = dev_of_offset(dev);
+	int ret;
+
+	var_info = (void*)dev_get_driver_data(dev);
 
 	host->name = strdup(dev->name);
 	host->ioaddr = dev_read_addr_ptr(dev);
-	host->bus_width = fdtdec_get_int(gd->fdt_blob, node, "bus-width", 4);
-	host->index = fdtdec_get_uint(gd->fdt_blob, node, "index", 0);
-	priv->base = (void *)fdtdec_get_addr_size_auto_parent(gd->fdt_blob,
-			dev_of_offset(parent), node, "reg", 1, NULL, false);
-	if (priv->base == (void *)FDT_ADDR_T_NONE ||
-	    host->ioaddr == (void *)FDT_ADDR_T_NONE)
+	ret = dev_read_u32(dev, "bus-width", &host->bus_width);
+	if (ret)
+		host->bus_width = 4;
+	ret = dev_read_u32(dev, "index", &host->index);
+	if (ret)
+		host->index = 0;
+	priv->base = dev_read_addr_index_ptr(dev, 1);
+
+	if (!host->ioaddr)
 		return -EINVAL;
+
+	if (!var_info->mci_removed && !priv->base) {
+		printf("msm_sdhci: MCI base address not found\n");
+		return -EINVAL;
+	}
 
 	return 0;
 }
@@ -244,10 +262,16 @@ static int msm_sdc_bind(struct udevice *dev)
 
 static const struct msm_sdhc_variant_info msm_sdhc_mci_var = {
 	.mci_removed = false,
+
+	.core_vendor_spec = 0x10c,
+	.core_vendor_spec_capabilities0 = 0x11c,
 };
 
 static const struct msm_sdhc_variant_info msm_sdhc_v5_var = {
 	.mci_removed = true,
+
+	.core_vendor_spec = 0x20c,
+	.core_vendor_spec_capabilities0 = 0x21c,
 };
 
 static const struct udevice_id msm_mmc_ids[] = {

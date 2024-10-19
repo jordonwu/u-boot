@@ -4,11 +4,11 @@
  * Wolfgang Denk, DENX Software Engineering, wd@denx.de.
  */
 
-#include <common.h>
 #include <bootm.h>
 #include <bootstage.h>
 #include <cpu_func.h>
 #include <efi_loader.h>
+#include <elf.h>
 #include <env.h>
 #include <fdt_support.h>
 #include <image.h>
@@ -260,12 +260,11 @@ static void do_bootvx_fdt(struct bootm_headers *images)
 	char *bootline;
 	ulong of_size = images->ft_len;
 	char **of_flat_tree = &images->ft_addr;
-	struct lmb *lmb = &images->lmb;
 
 	if (*of_flat_tree) {
-		boot_fdt_add_mem_rsv_regions(lmb, *of_flat_tree);
+		boot_fdt_add_mem_rsv_regions(*of_flat_tree);
 
-		ret = boot_relocate_fdt(lmb, of_flat_tree, &of_size);
+		ret = boot_relocate_fdt(of_flat_tree, &of_size);
 		if (ret)
 			return;
 
@@ -390,6 +389,20 @@ static int do_bootm_qnxelf(int flag, struct bootm_info *bmi)
 
 	if (dcache)
 		dcache_enable();
+
+	return 1;
+}
+#endif
+
+#if defined(CONFIG_BOOTM_ELF)
+static int do_bootm_elf(int flag, struct bootm_info *bmi)
+{
+	Bootelf_flags flags = { .autostart = 1 };
+
+	if (flag != BOOTM_STATE_OS_GO)
+		return 0;
+
+	bootelf(bmi->images->ep, flags, 0, NULL);
 
 	return 1;
 }
@@ -535,6 +548,9 @@ static boot_os_fn *boot_os[] = {
 #endif
 #ifdef CONFIG_BOOTM_EFI
 	[IH_OS_EFI] = do_bootm_efi,
+#endif
+#if defined(CONFIG_BOOTM_ELF)
+	[IH_OS_ELF] = do_bootm_elf,
 #endif
 };
 

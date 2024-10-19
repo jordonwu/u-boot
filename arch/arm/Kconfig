@@ -653,6 +653,7 @@ config ARCH_BCM283X
 	select SERIAL_SEARCH_ALL
 	imply CMD_DM
 	imply FAT_WRITE
+	imply OF_HAS_PRIOR_STAGE
 
 config ARCH_BCMSTB
 	bool "Broadcom BCM7XXX family"
@@ -762,14 +763,13 @@ config ARCH_IPQ40XX
 	select DM_SERIAL
 	select DM_RESET
 	select GPIO_EXTRA_HEADER
-	select MSM_SMEM
 	select PINCTRL
 	select CLK
-	select SMEM
 	select OF_CONTROL
 	select CLK_QCOM_IPQ4019
 	select PINCTRL_QCOM_IPQ4019
 	imply CMD_DM
+	imply OF_UPSTREAM
 
 config ARCH_KEYSTONE
 	bool "TI Keystone"
@@ -802,7 +802,7 @@ config ARCH_OMAP2PLUS
 	bool "TI OMAP2+"
 	select CPU_V7A
 	select GPIO_EXTRA_HEADER
-	select SPL_BOARD_INIT if SPL
+	select SPL_SOC_INIT if SPL
 	select SPL_STACK_R if SPL
 	select SUPPORT_SPL
 	imply TI_SYSC if DM && OF_CONTROL
@@ -1022,7 +1022,7 @@ config ARCH_APPLE
 	select USB
 	imply CMD_DM
 	imply CMD_GPT
-	imply DISTRO_DEFAULTS
+	imply BOOTSTD_FULL
 	imply OF_HAS_PRIOR_STAGE
 
 config ARCH_OWL
@@ -1089,7 +1089,8 @@ config ARCH_SNAPDRAGON
 	select BOARD_LATE_INIT
 	select OF_BOARD
 	select SAVE_PREV_BL_FDT_ADDR
-	select LINUX_KERNEL_IMAGE_HEADER
+	select LINUX_KERNEL_IMAGE_HEADER if !ENABLE_ARM_SOC_BOOT0_HOOK
+	imply OF_UPSTREAM
 	imply CMD_DM
 
 config ARCH_SOCFPGA
@@ -1235,6 +1236,18 @@ config ARCH_VERSAL
 	imply BOARD_LATE_INIT
 	imply ENV_VARS_UBOOT_RUNTIME_CONFIG
 
+config ARCH_VERSAL2
+	bool "Support AMD Versal Gen 2 Platform"
+	select ARM64
+	select CLK
+	select DM
+	select DM_MMC if MMC
+	select DM_SERIAL
+	select OF_CONTROL
+	imply BOARD_LATE_INIT
+	imply ENV_VARS_UBOOT_RUNTIME_CONFIG
+	imply ZYNQMP_FIRMWARE
+
 config ARCH_VERSAL_NET
 	bool "Support Xilinx Versal NET Platform"
 	select ARM64
@@ -1272,7 +1285,7 @@ config ARCH_ZYNQ
 	select OF_CONTROL
 	select MTD
 	select SPI
-	select SPL_BOARD_INIT if SPL
+	select SPL_SOC_INIT if SPL
 	select SPL_CLK if SPL
 	select SPL_DM if SPL
 	select SPL_DM_SPI if SPL
@@ -1315,7 +1328,7 @@ config ARCH_ZYNQMP
 	imply FIRMWARE
 	select GICV2
 	select OF_CONTROL
-	select SPL_BOARD_INIT if SPL
+	select SPL_SOC_INIT if SPL
 	select SPL_CLK if SPL
 	select SPL_DM if SPL
 	select SPL_DM_SPI if SPI && SPL_DM
@@ -1345,7 +1358,7 @@ config ARCH_ZYNQMP
 config ARCH_TEGRA
 	bool "NVIDIA Tegra"
 	select GPIO_EXTRA_HEADER
-	imply DISTRO_DEFAULTS
+	imply BOOTSTD_DEFAULTS
 	imply FAT_WRITE
 	imply SPL_TIMER if SPL
 
@@ -1853,6 +1866,23 @@ config TARGET_LS1046AFRWY
 	  development platform that supports the QorIQ LS1046A
 	  Layerscape Architecture processor.
 
+config ARCH_SC5XX
+	bool "Analog Devices SC5XX-processor family"
+	select ADI_SC5XX_TIMER
+	select DM
+	select DM_SERIAL
+	select HAS_CUSTOM_SYS_INIT_SP_ADDR
+	select PANIC_HANG
+	select SPL
+	select SPL_BOOTROM_SUPPORT
+	select SPL_DM
+	select SPL_DM_SEQ_ALIAS
+	select SPL_LIBGENERIC_SUPPORT
+	select SPL_LIBCOMMON_SUPPORT
+	select SPL_SKIP_LOWLEVEL_INIT
+	select SUPPORT_SPL
+	select TIMER
+
 config TARGET_SL28
 	bool "Support sl28"
 	select ARCH_LS1028A
@@ -2286,6 +2316,8 @@ source "arch/arm/mach-rockchip/Kconfig"
 
 source "arch/arm/mach-s5pc1xx/Kconfig"
 
+source "arch/arm/mach-sc5xx/Kconfig"
+
 source "arch/arm/mach-snapdragon/Kconfig"
 
 source "arch/arm/mach-socfpga/Kconfig"
@@ -2311,6 +2343,8 @@ source "arch/arm/mach-zynq/Kconfig"
 source "arch/arm/mach-zynqmp/Kconfig"
 
 source "arch/arm/mach-versal/Kconfig"
+
+source "arch/arm/mach-versal2/Kconfig"
 
 source "arch/arm/mach-versal-net/Kconfig"
 

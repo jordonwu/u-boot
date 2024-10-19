@@ -3,7 +3,6 @@
  * Copyright 2018, 2021 NXP
  */
 
-#include <common.h>
 #include <clk.h>
 #include <cpu.h>
 #include <cpu_func.h>
@@ -49,7 +48,7 @@ static char *get_reset_cause(void)
 {
 	sc_pm_reset_reason_t reason;
 
-	if (sc_pm_reset_reason(-1, &reason) != SC_ERR_NONE)
+	if (sc_pm_reset_reason(-1, &reason))
 		return "Unknown reset";
 
 	switch (reason) {
@@ -90,11 +89,11 @@ __weak void reset_cpu(void)
 
 int arch_cpu_init(void)
 {
-#if defined(CONFIG_SPL_BUILD) && defined(CONFIG_SPL_RECOVER_DATA_SECTION)
+#if defined(CONFIG_XPL_BUILD) && defined(CONFIG_SPL_RECOVER_DATA_SECTION)
 	spl_save_restore_data();
 #endif
 
-#ifdef CONFIG_SPL_BUILD
+#ifdef CONFIG_XPL_BUILD
 	struct pass_over_info_t *pass_over;
 
 	if (is_soc_rev(CHIP_REV_A)) {
@@ -161,6 +160,7 @@ int arch_auxiliary_core_up(u32 core_id, ulong boot_private_data)
 	sc_faddr_t tcml_addr;
 	u32 tcml_size = SZ_128K;
 	ulong addr;
+	int ret;
 
 	switch (core_id) {
 	case 0:
@@ -188,10 +188,12 @@ int arch_auxiliary_core_up(u32 core_id, ulong boot_private_data)
 
 	printf("Power on M4 and MU\n");
 
-	if (sc_pm_set_resource_power_mode(-1, core_rsrc, SC_PM_PW_MODE_ON) != SC_ERR_NONE)
-		return -EIO;
+	ret = sc_pm_set_resource_power_mode(-1, core_rsrc, SC_PM_PW_MODE_ON);
+	if (ret)
+		return ret;
 
-	if (sc_pm_set_resource_power_mode(-1, mu_rsrc, SC_PM_PW_MODE_ON) != SC_ERR_NONE)
+	ret = sc_pm_set_resource_power_mode(-1, mu_rsrc, SC_PM_PW_MODE_ON);
+	if (ret)
 		return -EIO;
 
 	printf("Copy M4 image from 0x%lx to TCML 0x%lx\n", addr, (ulong)tcml_addr);
@@ -200,7 +202,8 @@ int arch_auxiliary_core_up(u32 core_id, ulong boot_private_data)
 		memcpy((void *)tcml_addr, (void *)addr, tcml_size);
 
 	printf("Start M4 %u\n", core_id);
-	if (sc_pm_cpu_start(-1, core_rsrc, true, tcml_addr) != SC_ERR_NONE)
+	ret = sc_pm_cpu_start(-1, core_rsrc, true, tcml_addr);
+	if (ret)
 		return -EIO;
 
 	printf("bootaux complete\n");
@@ -215,6 +218,7 @@ int arch_auxiliary_core_up(u32 core_id, ulong boot_private_data)
 	sc_faddr_t aux_core_ram;
 	u32 size;
 	ulong addr;
+	int ret;
 
 	switch (core_id) {
 	case 0:
@@ -243,30 +247,33 @@ int arch_auxiliary_core_up(u32 core_id, ulong boot_private_data)
 
 	printf("Power on aux core %d\n", core_id);
 
-	if (sc_pm_set_resource_power_mode(-1, core_rsrc, SC_PM_PW_MODE_ON) != SC_ERR_NONE)
-		return -EIO;
+	ret = sc_pm_set_resource_power_mode(-1, core_rsrc, SC_PM_PW_MODE_ON);
+	if (ret)
+		return ret;
 
 	if (mu_rsrc != SC_R_NONE) {
-		if (sc_pm_set_resource_power_mode(-1, mu_rsrc, SC_PM_PW_MODE_ON) != SC_ERR_NONE)
+		ret = sc_pm_set_resource_power_mode(-1, mu_rsrc, SC_PM_PW_MODE_ON);
+		if (ret)
 			return -EIO;
 	}
 
 	if (core_id == 1) {
 		struct power_domain pd;
 
-		if (sc_pm_clock_enable(-1, core_rsrc, SC_PM_CLK_PER, true, false) != SC_ERR_NONE) {
+		ret = sc_pm_clock_enable(-1, core_rsrc, SC_PM_CLK_PER, true, false);
+		if (ret) {
 			printf("Error enable clock\n");
-			return -EIO;
+			return ret;
 		}
 
-		if (!power_domain_lookup_name("audio_sai0", &pd)) {
+		if (!imx8_power_domain_lookup_name("audio_sai0", &pd)) {
 			if (power_domain_on(&pd)) {
 				printf("Error power on SAI0\n");
 				return -EIO;
 			}
 		}
 
-		if (!power_domain_lookup_name("audio_ocram", &pd)) {
+		if (!imx8_power_domain_lookup_name("audio_ocram", &pd)) {
 			if (power_domain_on(&pd)) {
 				printf("Error power on HIFI RAM\n");
 				return -EIO;
@@ -287,8 +294,9 @@ int arch_auxiliary_core_up(u32 core_id, ulong boot_private_data)
 
 	printf("Start %s\n", core_id == 0 ? "M4" : "HIFI");
 
-	if (sc_pm_cpu_start(-1, core_rsrc, true, aux_core_ram) != SC_ERR_NONE)
-		return -EIO;
+	ret = sc_pm_cpu_start(-1, core_rsrc, true, aux_core_ram);
+	if (ret)
+		return ret;
 
 	printf("bootaux complete\n");
 	return 0;
@@ -314,7 +322,7 @@ int arch_auxiliary_core_check_up(u32 core_id)
 		return 0;
 	}
 
-	if (sc_pm_get_resource_power_mode(-1, core_rsrc, &power_mode) != SC_ERR_NONE)
+	if (sc_pm_get_resource_power_mode(-1, core_rsrc, &power_mode))
 		return 0;
 
 	if (power_mode != SC_PM_PW_MODE_OFF)
@@ -520,7 +528,6 @@ phys_size_t get_effective_memsize(void)
 	board_mem_get_layout(&phys_sdram_1_start, &phys_sdram_1_size,
 			     &phys_sdram_2_start, &phys_sdram_2_size);
 
-
 	end1 = (sc_faddr_t)phys_sdram_1_start + phys_sdram_1_size;
 	for (mr = 0; mr < 64; mr++) {
 		err = get_owned_memreg(mr, &start, &end);
@@ -699,7 +706,6 @@ static u64 get_block_size(sc_faddr_t addr_start, sc_faddr_t addr_end)
 
 	board_mem_get_layout(&phys_sdram_1_start, &phys_sdram_1_size,
 			     &phys_sdram_2_start, &phys_sdram_2_size);
-
 
 	end1 = (sc_faddr_t)phys_sdram_1_start + phys_sdram_1_size;
 	end2 = (sc_faddr_t)phys_sdram_2_start + phys_sdram_2_size;

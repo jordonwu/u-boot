@@ -8,7 +8,6 @@
  * part in order to simplify future porting of fixes and support for other SoCs.
  */
 
-#include <common.h>
 #include <clk.h>
 #include <dm.h>
 #include <dm/device_compat.h>
@@ -311,6 +310,12 @@ static int eqos_probe_resources_rk(struct udevice *dev)
 	const char *clock_in_out;
 	int reset_flags = GPIOD_IS_OUT | GPIOD_IS_OUT_ACTIVE;
 	int ret;
+
+	ret = eqos_get_base_addr_dt(dev);
+	if (ret) {
+		dev_err(dev, "eqos_get_base_addr_dt failed: %d\n", ret);
+		return ret;
+	}
 
 	data = calloc(1, sizeof(struct rockchip_platform_data));
 	if (!data)

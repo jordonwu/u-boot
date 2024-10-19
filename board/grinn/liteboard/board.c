@@ -4,7 +4,6 @@
  * Copyright (C) 2016 Grinn
  */
 
-#include <common.h>
 #include <command.h>
 #include <init.h>
 #include <asm/arch/clock.h>
@@ -230,7 +229,7 @@ int checkboard(void)
 	return 0;
 }
 
-#ifdef CONFIG_SPL_BUILD
+#ifdef CONFIG_XPL_BUILD
 void board_boot_order(u32 *spl_boot_list)
 {
 	struct src *psrc = (struct src *)SRC_BASE_ADDR;

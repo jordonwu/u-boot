@@ -7,7 +7,7 @@
 
 obj-y += imx8mp_debix_model_a.o
 
-ifdef CONFIG_SPL_BUILD
+ifdef CONFIG_XPL_BUILD
 obj-y += spl.o
 
 ifdef CONFIG_TARGET_IMX8MP_DEBIX_MODEL_A

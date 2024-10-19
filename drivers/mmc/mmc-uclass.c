@@ -7,7 +7,6 @@
 
 #define LOG_CATEGORY UCLASS_MMC
 
-#include <common.h>
 #include <bootdev.h>
 #include <log.h>
 #include <mmc.h>
@@ -112,7 +111,7 @@ int mmc_getcd(struct mmc *mmc)
 	return dm_mmc_get_cd(mmc->dev);
 }
 
-#ifdef MMC_SUPPORTS_TUNING
+#if CONFIG_IS_ENABLED(MMC_SUPPORTS_TUNING)
 static int dm_mmc_execute_tuning(struct udevice *dev, uint opcode)
 {
 	struct dm_mmc_ops *ops = mmc_get_ops(dev);
@@ -257,11 +256,14 @@ int mmc_of_parse(struct udevice *dev, struct mmc_config *cfg)
 	if (dev_read_bool(dev, "mmc-hs200-1_2v"))
 		cfg->host_caps |= MMC_CAP(MMC_HS_200);
 	if (dev_read_bool(dev, "mmc-hs400-1_8v"))
-		cfg->host_caps |= MMC_CAP(MMC_HS_400);
+		cfg->host_caps |= MMC_CAP(MMC_HS_400) | MMC_CAP(MMC_HS_200);
 	if (dev_read_bool(dev, "mmc-hs400-1_2v"))
-		cfg->host_caps |= MMC_CAP(MMC_HS_400);
+		cfg->host_caps |= MMC_CAP(MMC_HS_400) | MMC_CAP(MMC_HS_200);
 	if (dev_read_bool(dev, "mmc-hs400-enhanced-strobe"))
 		cfg->host_caps |= MMC_CAP(MMC_HS_400_ES);
+	if (dev_read_bool(dev, "no-mmc-hs400"))
+		cfg->host_caps &= ~(MMC_CAP(MMC_HS_400) |
+				    MMC_CAP(MMC_HS_400_ES));
 
 	if (dev_read_bool(dev, "non-removable")) {
 		cfg->host_caps |= MMC_CAP_NONREMOVABLE;
@@ -299,7 +301,7 @@ struct mmc *find_mmc_device(int dev_num)
 	ret = blk_find_device(UCLASS_MMC, dev_num, &dev);
 
 	if (ret) {
-#if !defined(CONFIG_SPL_BUILD) || defined(CONFIG_SPL_LIBCOMMON_SUPPORT)
+#if !defined(CONFIG_XPL_BUILD) || defined(CONFIG_SPL_LIBCOMMON_SUPPORT)
 		printf("MMC Device %d not found\n", dev_num);
 #endif
 		return NULL;
@@ -371,7 +373,7 @@ void mmc_do_preinit(void)
 	}
 }
 
-#if !defined(CONFIG_SPL_BUILD) || defined(CONFIG_SPL_LIBCOMMON_SUPPORT)
+#if !defined(CONFIG_XPL_BUILD) || defined(CONFIG_SPL_LIBCOMMON_SUPPORT)
 void print_mmc_devices(char separator)
 {
 	struct udevice *dev;
@@ -535,7 +537,6 @@ U_BOOT_DRIVER(mmc_blk) = {
 	.flags		= DM_FLAG_OS_PREPARE,
 };
 #endif /* CONFIG_BLK */
-
 
 UCLASS_DRIVER(mmc) = {
 	.id		= UCLASS_MMC,

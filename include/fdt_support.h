@@ -423,6 +423,8 @@ int arch_fixup_memory_node(void *blob);
 int fdt_setup_simplefb_node(void *fdt, int node, u64 base_address, u32 width,
 			    u32 height, u32 stride, const char *format);
 
+int fdt_add_fb_mem_rsv(void *blob);
+
 int fdt_overlay_apply_verbose(void *fdt, void *fdto);
 
 int fdt_valid(struct fdt_header **blobp);
@@ -461,4 +463,14 @@ void fdt_fixup_board_enet(void *blob);
 #ifdef CONFIG_CMD_PSTORE
 void fdt_fixup_pstore(void *blob);
 #endif
+
+/**
+ * fdt_kaslrseed() - create a 'kaslr-seed' node in chosen
+ *
+ * @blob:	fdt blob
+ * @overwrite:	do not overwrite existing non-zero node unless true
+ * Return:	0 if OK, -ve on error
+ */
+int fdt_kaslrseed(void *blob, bool overwrite);
+
 #endif /* ifndef __FDT_SUPPORT_H */

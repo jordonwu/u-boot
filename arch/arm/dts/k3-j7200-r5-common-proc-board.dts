@@ -89,10 +89,21 @@
           <0x0 0x50000000 0x0 0x8000000>;
 };
 
+&fss {
+	/* enable ranges missing from the FSS node */
+	ranges = <0x0 0x47000000 0x0 0x47000000 0x0 0x00068400>,
+	         <0x0 0x50000000 0x0 0x50000000 0x0 0x08000000>;
+};
+
 &mcu_ringacc {
     ti,sci = <&dm_tifs>;
 };
 
 &mcu_udmap {
     ti,sci = <&dm_tifs>;
+};
+
+&wkup_vtm0 {
+	vdd-supply-2 = <&buckb1>;
+	bootph-pre-ram;
 };

@@ -5,7 +5,6 @@
  * Based on led.c
  */
 
-#include <common.h>
 #include <dm.h>
 #include <adc.h>
 #include <button.h>
@@ -38,7 +37,7 @@ static int dm_test_button_base(struct unit_test_state *uts)
 
 	return 0;
 }
-DM_TEST(dm_test_button_base, UT_TESTF_SCAN_PDATA | UT_TESTF_SCAN_FDT);
+DM_TEST(dm_test_button_base, UTF_SCAN_PDATA | UTF_SCAN_FDT);
 
 /* Test of the button uclass using the button_gpio driver */
 static int dm_test_button_gpio(struct unit_test_state *uts)
@@ -63,7 +62,7 @@ static int dm_test_button_gpio(struct unit_test_state *uts)
 
 	return 0;
 }
-DM_TEST(dm_test_button_gpio, UT_TESTF_SCAN_PDATA | UT_TESTF_SCAN_FDT);
+DM_TEST(dm_test_button_gpio, UTF_SCAN_PDATA | UTF_SCAN_FDT);
 
 /* Test obtaining a BUTTON by label */
 static int dm_test_button_label(struct unit_test_state *uts)
@@ -84,7 +83,7 @@ static int dm_test_button_label(struct unit_test_state *uts)
 
 	return 0;
 }
-DM_TEST(dm_test_button_label, UT_TESTF_SCAN_PDATA | UT_TESTF_SCAN_FDT);
+DM_TEST(dm_test_button_label, UTF_SCAN_PDATA | UTF_SCAN_FDT);
 
 /* Test button has linux,code */
 static int dm_test_button_linux_code(struct unit_test_state *uts)
@@ -96,7 +95,7 @@ static int dm_test_button_linux_code(struct unit_test_state *uts)
 
 	return 0;
 }
-DM_TEST(dm_test_button_linux_code, UT_TESTF_SCAN_PDATA | UT_TESTF_SCAN_FDT);
+DM_TEST(dm_test_button_linux_code, UTF_SCAN_PDATA | UTF_SCAN_FDT);
 
 /* Test adc-keys driver */
 static int dm_test_button_keys_adc(struct unit_test_state *uts)
@@ -130,7 +129,7 @@ static int dm_test_button_keys_adc(struct unit_test_state *uts)
 
 	return 0;
 }
-DM_TEST(dm_test_button_keys_adc, UT_TESTF_SCAN_PDATA | UT_TESTF_SCAN_FDT);
+DM_TEST(dm_test_button_keys_adc, UTF_SCAN_PDATA | UTF_SCAN_FDT);
 
 /* Test of the button uclass using the button_gpio driver */
 static int dm_test_button_cmd(struct unit_test_state *uts)
@@ -226,4 +225,4 @@ static int dm_test_button_cmd(struct unit_test_state *uts)
 
 	return 0;
 }
-DM_TEST(dm_test_button_cmd, UT_TESTF_SCAN_PDATA | UT_TESTF_SCAN_FDT);
+DM_TEST(dm_test_button_cmd, UTF_SCAN_PDATA | UTF_SCAN_FDT);

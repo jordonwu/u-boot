@@ -4,7 +4,6 @@
  * Copyright 2021 Purism
  */
 
-#include <common.h>
 #include <malloc.h>
 #include <errno.h>
 #include <asm/io.h>
@@ -43,8 +42,8 @@ uint board_mmc_get_env_part(struct mmc *mmc)
 {
 	uint part = EXT_CSD_EXTRACT_BOOT_PART(mmc->part_config);
 
-	if (part == 7)
-		part = 0;
+	if (part == EMMC_BOOT_PART_USER)
+		part = EMMC_HWPART_DEFAULT;
 	return part;
 }
 #endif

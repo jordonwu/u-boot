@@ -15,7 +15,6 @@
 #include <asm/global_data.h>
 #include <asm/io.h>
 #include <asm/system.h>
-#include <asm/u-boot.h>
 #include <dm/lists.h>
 #include <dm/util.h>
 #include <linux/bitops.h>
@@ -264,7 +263,7 @@ static void clk_basic_init(struct udevice *dev,
 		clk_write_ctrl(plat,
 			       CM_REG_READL(plat, CLKMGR_CTRL) & ~CLKMGR_CTRL_BOOTMODE);
 	} else {
-#ifdef CONFIG_SPL_BUILD
+#ifdef CONFIG_XPL_BUILD
 		/* Always force clock manager into boot mode before any configuration */
 		clk_write_ctrl(plat,
 			       CM_REG_READL(plat, CLKMGR_CTRL) | CLKMGR_CTRL_BOOTMODE);

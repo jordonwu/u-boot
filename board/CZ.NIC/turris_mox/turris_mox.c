@@ -3,7 +3,7 @@
  * Copyright (C) 2018 Marek Behún <kabel@kernel.org>
  */
 
-#include <common.h>
+#include <config.h>
 #include <asm/arch/cpu.h>
 #include <asm/arch/soc.h>
 #include <net.h>
@@ -395,7 +395,7 @@ static void load_spi_dtb(void)
 		return;
 
 	/*
-	 * SPI NOR "dtb" partition offset & size hardcoded for now because the
+	 * SPI NOR "dtb" partition offset & size hardcoded for now because the
 	 * mtd subsystem does not offer finding the partition yet and we do not
 	 * want to reimplement OF partition parser here.
 	 */

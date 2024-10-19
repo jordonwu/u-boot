@@ -5,7 +5,6 @@
  * Copyright (C) 2018-2019 Xilinx, Inc.
  */
 
-#include <common.h>
 #include <log.h>
 #include <asm/io.h>
 #include <asm/system.h>
@@ -109,7 +108,7 @@ static int zynqmp_ipi_send(struct mbox_chan *chan, const void *data)
 		writel(msg->buf[i], &mbx[i]);
 
 	/* Use SMC calls for Exception Level less than 3 where TF-A is available */
-	if (!IS_ENABLED(CONFIG_SPL_BUILD) && current_el() < 3) {
+	if (!IS_ENABLED(CONFIG_XPL_BUILD) && current_el() < 3) {
 		ret = zynqmp_ipi_fw_call(zynqmp, SMC_IPI_MAILBOX_NOTIFY, 0);
 
 		debug("%s, send %ld bytes\n", __func__, msg->len);
@@ -149,7 +148,7 @@ static int zynqmp_ipi_recv(struct mbox_chan *chan, void *data)
 		msg->buf[i] = readl(&mbx[i]);
 
 	/* Ack to remote if EL is not 3 */
-	if (!IS_ENABLED(CONFIG_SPL_BUILD) && current_el() < 3) {
+	if (!IS_ENABLED(CONFIG_XPL_BUILD) && current_el() < 3) {
 		ret = zynqmp_ipi_fw_call(zynqmp, SMC_IPI_MAILBOX_ACK,
 					 IPI_SMC_ACK_EIRQ_MASK);
 	}
@@ -169,7 +168,7 @@ static int zynqmp_ipi_dest_probe(struct udevice *dev)
 
 	node = dev_ofnode(dev);
 
-	if (IS_ENABLED(CONFIG_SPL_BUILD) || of_machine_is_compatible("xlnx,zynqmp"))
+	if (IS_ENABLED(CONFIG_XPL_BUILD) || of_machine_is_compatible("xlnx,zynqmp"))
 		zynqmp->el3_supported = true;
 
 	ret = dev_read_u32(dev->parent, "xlnx,ipi-id", &zynqmp->local_id);

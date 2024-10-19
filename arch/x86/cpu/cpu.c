@@ -20,7 +20,6 @@
 
 #define LOG_CATEGORY	UCLASS_CPU
 
-#include <common.h>
 #include <bootstage.h>
 #include <command.h>
 #include <cpu_func.h>
@@ -76,8 +75,7 @@ int __weak x86_cleanup_before_linux(void)
 	ret = mp_park_aps();
 	if (ret)
 		return log_msg_ret("park", ret);
-	bootstage_stash((void *)CONFIG_BOOTSTAGE_STASH_ADDR,
-			CONFIG_BOOTSTAGE_STASH_SIZE);
+	bootstage_stash_default();
 
 	return 0;
 }
@@ -187,7 +185,7 @@ void show_boot_progress(int val)
 #endif
 
 #if !defined(CONFIG_SYS_COREBOOT) && !defined(CONFIG_EFI_STUB) && \
-	!defined(CONFIG_SPL_BUILD)
+	!defined(CONFIG_XPL_BUILD)
 /*
  * Implement a weak default function for boards that need to do some final init
  * before the system is ready.
@@ -249,7 +247,7 @@ static int last_stage_init(void)
 }
 EVENT_SPY_SIMPLE(EVT_LAST_STAGE_INIT, last_stage_init);
 
-#endif  /* !SYS_COREBOOT && !EFI_STUB && !SPL_BUILD */
+#endif  /* !SYS_COREBOOT && !EFI_STUB && !XPL_BUILD */
 
 static int x86_init_cpus(void)
 {

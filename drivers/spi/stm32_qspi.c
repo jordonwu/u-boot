@@ -9,7 +9,6 @@
 
 #define LOG_CATEGORY UCLASS_SPI
 
-#include <common.h>
 #include <clk.h>
 #include <dm.h>
 #include <log.h>
@@ -395,7 +394,7 @@ static int stm32_qspi_claim_bus(struct udevice *dev)
 {
 	struct stm32_qspi_priv *priv = dev_get_priv(dev->parent);
 	struct dm_spi_slave_plat *slave_plat = dev_get_parent_plat(dev);
-	int slave_cs = slave_plat->cs;
+	int slave_cs = slave_plat->cs[0];
 
 	if (slave_cs >= STM32_QSPI_MAX_CHIP)
 		return -ENODEV;

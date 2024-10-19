@@ -6,7 +6,6 @@
 
 #define LOG_CATEGORY LOGC_ARCH
 
-#include <common.h>
 #include <handoff.h>
 #include <init.h>
 #include <log.h>
@@ -29,7 +28,7 @@ int dram_init(void)
 
 		return 0;
 	}
-	if (spl_phase() == PHASE_SPL) {
+	if (xpl_phase() == PHASE_SPL) {
 		bool s3wake = false;
 
 		s3wake = IS_ENABLED(CONFIG_HAVE_ACPI_RESUME) &&
@@ -60,7 +59,7 @@ int dram_init(void)
 #endif
 	} else {
 #if CONFIG_IS_ENABLED(HANDOFF)
-		struct spl_handoff *ho = gd->spl_handoff;
+		struct spl_handoff *ho = handoff_get();
 
 		if (!ho) {
 			log_debug("No SPL handoff found\n");
@@ -83,7 +82,7 @@ phys_addr_t board_get_usable_ram_top(phys_size_t total_size)
 		return gd->ram_size;
 
 #if CONFIG_IS_ENABLED(HANDOFF)
-	struct spl_handoff *ho = gd->spl_handoff;
+	struct spl_handoff *ho = handoff_get();
 
 	log_debug("usable_ram_top = %lx\n", ho->arch.usable_ram_top);
 

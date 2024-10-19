@@ -224,7 +224,6 @@ ARM BROADCOM BCMBCA
 M:	Anand Gore <anand.gore@broadcom.com>
 M:	William Zhang <william.zhang@broadcom.com>
 M:	Kursad Oney <kursad.oney@broadcom.com>
-M:	Joel Peshkin <joel.peshkin@broadcom.com>
 M:	Philippe Reynes <philippe.reynes@softathome.com>
 S:	Maintained
 F:	arch/arm/mach-bcmbca/
@@ -307,6 +306,7 @@ F:	arch/arm/include/asm/mach-imx/
 F:	board/freescale/*mx*/
 F:	board/freescale/common/
 F:	common/spl/spl_imx_container.c
+F:	doc/imx/
 F:	drivers/serial/serial_mxc.c
 F:	include/imx_container.h
 
@@ -334,17 +334,16 @@ F:	drivers/spi/gxp_spi.c
 
 ARM IPQ40XX
 M:	Robert Marko <robert.marko@sartura.hr>
-M:	Luka Kovacic <luka.kovacic@sartura.hr>
 M:	Luka Perkov <luka.perkov@sartura.hr>
 S:	Maintained
 F:	arch/arm/mach-ipq40xx/
-F:	include/dt-bindings/clock/qcom,ipq4019-gcc.h
-F:	include/dt-bindings/reset/qcom,ipq4019-reset.h
-F:	drivers/reset/reset-ipq4019.c
+F:	include/dt-bindings/clock/qcom,gcc-ipq4019.h
+F:	drivers/clk/qcom/clock-ipq4019.c
 F:	drivers/phy/phy-qcom-ipq4019-usb.c
 F:	drivers/spi/spi-qup.c
 F:	drivers/net/mdio-ipq4019.c
 F:	drivers/rng/msm_rng.c
+F:	drivers/pinctrl/qcom/pinctrl-ipq4019.c
 
 ARM LAYERSCAPE SFP
 M:	Sean Anderson <sean.anderson@seco.com>
@@ -534,6 +533,7 @@ F:	arch/arm/include/asm/arch-rockchip/
 F:	arch/arm/mach-rockchip/
 F:	board/amarula/vyasa-rk3288/
 F:	board/anbernic/rgxx3_rk3566/
+F:	board/armsom/sige7-rk3588/
 F:	board/chipspark/popmetal_rk3288
 F:	board/engicam/px30_core/
 F:	board/firefly/
@@ -579,19 +579,14 @@ F:	drivers/clk/exynos/clk.h
 ARM SAMSUNG EXYNOS850 SOC
 M:	Sam Protsenko <semen.protsenko@linaro.org>
 S:	Maintained
-F:	arch/arm/dts/exynos850-pinctrl.dtsi
-F:	arch/arm/dts/exynos850.dtsi
-F:	doc/device-tree-bindings/clock/samsung,exynos850-clock.yaml
 F:	drivers/clk/exynos/clk-exynos850.c
 F:	drivers/pinctrl/exynos/pinctrl-exynos850.c
-F:	include/dt-bindings/clock/exynos850.h
 
 ARM SAMSUNG SOC DRIVERS
 M:	Sam Protsenko <semen.protsenko@linaro.org>
 S:	Maintained
-F:	doc/device-tree-bindings/soc/samsung/*
+F:	doc/device-tree-bindings/soc/samsung/exynos-pmu.yaml
 F:	drivers/soc/samsung/*
-F:	include/dt-bindings/soc/samsung,*.h
 
 ARM SANCLOUD
 M:	Paul Barker <paul.barker@sancloud.com>
@@ -599,15 +594,37 @@ R:	Marc Murphy <marc.murphy@sancloud.com>
 S:	Supported
 F:	arch/arm/dts/am335x-sancloud*
 
+ARM SC5XX
+M:	Nathan Barrett-Morrison <nathan.morrison@timesys.com>
+M:	Greg Malysa <greg.malysa@timesys.com>
+M:	Ian Roberts <ian.roberts@timesys.com>
+M:	Vasileios Bimpikas <vasileios.bimpikas@analog.com>
+M:	Utsav Agarwal <utsav.agarwal@analog.com>
+M:	Arturs Artamonovs <arturs.artamonovs@analog.com>
+L:	adsp-linux@analog.com
+S:	Supported
+T:	git https://github.com/analogdevicesinc/lnxdsp-u-boot
+F:	arch/arm/dts/sc5*
+F:	arch/arm/include/asm/arch-adi/
+F:	arch/arm/mach-sc5xx/
+F:	board/adi/
+F:	doc/device-tree-bindings/arm/adi/adi,sc5xx.yaml
+F:	doc/device-tree-bindings/clock/adi,sc5xx-clocks.yaml
+F:	doc/device-tree-bindings/timer/adi,sc5xx-gptimer.yaml
+F:	drivers/clk/adi/
+F:	drivers/serial/serial_adi_uart4.c
+F:	drivers/timer/adi_sc5xx_timer.c
+F:	include/configs/sc5*
+F:	include/env/adi/
+
 ARM SNAPDRAGON
 M:	Caleb Connolly <caleb.connolly@linaro.org>
 M:	Neil Armstrong <neil.armstrong@linaro.org>
 R:	Sumit Garg <sumit.garg@linaro.org>
+L:	u-boot-qcom@groups.io
 S:	Maintained
-F:	arch/arm/dts/msm8*.dtsi
-F:	arch/arm/dts/pm8???.dtsi
-F:	arch/arm/dts/pms405.dtsi
-F:	arch/arm/dts/sdm845.dtsi
+T:	git https://source.denx.de/u-boot/custodians/u-boot-snapdragon.git
+F:	configs/qcm6490_defconfig
 F:	drivers/*/*/pm8???-*
 F:	drivers/gpio/msm_gpio.c
 F:	drivers/mmc/msm_sdhci.c
@@ -723,6 +740,7 @@ F:	arch/arm/mach-omap2/
 F:	arch/arm/include/asm/arch-omap*/
 F:	arch/arm/include/asm/ti-common/
 F:	board/ti/
+F:	doc/board/ti/
 F:	drivers/dma/ti*
 F:	drivers/dma/ti*/
 F:	drivers/firmware/ti_sci.*
@@ -909,7 +927,7 @@ F:	drivers/block/blkmap.c
 F:	include/blkmap.h
 F:	test/dm/blkmap.c
 
-BOOTDEVICE
+BOOTSTD
 M:	Simon Glass <sjg@chromium.org>
 S:	Maintained
 F:	boot/bootdev*.c
@@ -918,7 +936,7 @@ F:	boot/bootmeth*.c
 F:	boot/bootstd.c
 F:	cmd/bootdev.c
 F:	cmd/bootflow.c
-F:	doc/develop/bootstd.rst
+F:	doc/develop/bootstd/
 F:	doc/usage/bootdev.rst
 F:	doc/usage/bootflow.rst
 F:	doc/usage/bootmeth.rst
@@ -929,6 +947,14 @@ F:	include/bootmeth.h
 F:	include/bootstd.h
 F:	net/eth_bootdevice.c
 F:	test/boot/
+
+BOOTMETH_ANDROID
+M:	Mattijs Korpershoek <mkorpershoek@baylibre.com>
+S:	Maintained
+T:	git https://source.denx.de/u-boot/custodians/u-boot-dfu.git
+F:	boot/bootmeth_android.c
+F:	boot/bootmeth_android.h
+F:	doc/develop/bootstd/android.rst
 
 BTRFS
 M:	Marek Behún <kabel@kernel.org>
@@ -980,6 +1006,13 @@ F:	arch/m68k/
 F:	doc/arch/m68k.rst
 F:	drivers/watchdog/mcf_wdt.c
 
+CPU
+M:	Simon Glass <sjg@chromium.org>
+M:	Hou Zhiqiang <Zhiqiang.Hou@nxp.com>
+S:	Maintained
+F:	cmd/cpu.c
+F:	doc/usage/cpu.rst
+
 CYCLIC
 M:	Stefan Roese <sr@denx.de>
 S:	Maintained
@@ -1004,8 +1037,11 @@ F:	common/update.c
 F:	doc/api/dfu.rst
 F:	doc/usage/dfu.rst
 F:	drivers/dfu/
+F:	drivers/usb/*/*gadget*
 F:	drivers/usb/gadget/
 F:	include/dfu.h
+F:	include/linux/usb/ch9.h
+F:	include/linux/usb/gadget.h
 
 DRIVER MODEL
 M:	Simon Glass <sjg@chromium.org>
@@ -1105,6 +1141,7 @@ F:	test/py/tests/test_event_dump.py
 FASTBOOT
 M:	Mattijs Korpershoek <mkorpershoek@baylibre.com>
 S:	Maintained
+T:	git https://source.denx.de/u-boot/custodians/u-boot-dfu.git
 F:	cmd/fastboot.c
 F:	doc/android/fastboot*.rst
 F:	include/fastboot.h
@@ -1149,6 +1186,14 @@ S:	Maintained
 T:	git https://source.denx.de/u-boot/custodians/u-boot-fsl-qoriq.git
 F:	drivers/watchdog/sp805_wdt.c
 F:	drivers/watchdog/sbsa_gwdt.c
+
+FWU Multi Bank Update
+M:	Sughosh Ganu <sughosh.ganu@linaro.org>
+S:	Maintained
+T:	git https://source.denx.de/u-boot/custodians/u-boot-efi.git
+F:	lib/fwu_updates/*
+F:	drivers/fwu-mdata/*
+F:	tools/mkfwumdata.c
 
 GATEWORKS_SC
 M:	Tim Harvey <tharvey@gateworks.com>
@@ -1313,6 +1358,17 @@ T:	git https://source.denx.de/u-boot/custodians/u-boot-net.git
 F:	drivers/net/
 F:	include/net.h
 F:	net/
+
+NETWORK (LWIP)
+M:	Jerome Forissier <jerome.forissier@linaro.org>
+S:	Maintained
+F:	cmd/net-lwip.c
+F:	configs/qemu_arm64_lwip_defconfig
+F:	drivers/net/sandbox-lwip.c
+F:	include/net-lwip.h
+F:	lib/lwip/Makefile
+F:	lib/lwip/u-boot/
+F:	net/lwip/
 
 NIOS
 M:	Thomas Chou <thomas@wytron.com.tw>
@@ -1570,7 +1626,7 @@ F:	cmd/sqfs.c
 F:	test/py/tests/test_fs/test_squashfs/
 
 STACKPROTECTOR
-M:	Joel Peshkin <joel.peshkin@broadcom.com>
+M:	William Zhang <william.zhang@broadcom.com>
 S:	Maintained
 F:	common/stackprot.c
 F:	cmd/stackprot_test.c
@@ -1612,6 +1668,7 @@ F:	arch/arm/mach-omap2/sec-common.c
 F:	arch/arm/mach-omap2/config_secure.mk
 F:	arch/arm/mach-k3/security.c
 F:	configs/am335x_hs_evm_defconfig
+F:	configs/am335x_hs_evm_spi_defconfig
 F:	configs/am335x_hs_evm_uart_defconfig
 F:	configs/am43xx_hs_evm_defconfig
 F:	configs/am43xx_hs_evm_qspi_defconfig
@@ -1642,9 +1699,18 @@ M:	Jens Wiklander <jens.wiklander@linaro.org>
 M:	Ilias Apalodimas <ilias.apalodimas@linaro.org>
 T:	git https://source.denx.de/u-boot/custodians/u-boot-tpm.git
 S:	Maintained
+F:	cmd/optee*
+F:	doc/README.tee
+F:	doc/device-tree-bindings/firmware/linaro,optee-tz.txt
+F:	drivers/firmware/scmi/optee_agent.c
 F:	drivers/tee/
+F:	include/sandboxtee.h
 F:	include/tee.h
 F:	include/tee/
+F:	include/test/optee.h
+F:	test/dm/tee.c
+F:	test/optee/
+F:	test/py/tests/test_optee_rpmb.py
 
 TEE-lib
 M:	Bryan O'Donoghue <bryan.odonoghue@linaro.org>
@@ -1659,10 +1725,24 @@ T:	git https://source.denx.de/u-boot/custodians/u-boot-ubi.git
 F:	drivers/mtd/ubi/
 
 UFS
+M:	Neil Armstrong <neil.armstrong@linaro.org>
 M:	Bhupesh Sharma <bhupesh.linux@gmail.com>
 M:	Neha Malcom Francis <n-francis@ti.com>
 S:	Maintained
 F:	drivers/ufs/
+
+UPL
+M:	Simon Glass <sjg@chromium.org>
+S:	Maintained
+T:	git https://source.denx.de/u-boot/custodians/u-boot-dm.git
+F:	boot/upl*
+F:	cmd/upl.c
+F:	common/spl/spl_upl.c
+F:	doc/usage/upl.rst
+F:	doc/usage/cmd/upl.rst
+F:	include/upl.h
+F:	test/boot/upl.c
+F:	test/py/tests/test_upl.py
 
 USB
 M:	Marek Vasut <marex@denx.de>
@@ -1673,6 +1753,15 @@ F:	common/usb.c
 F:	common/usb_kbd.c
 F:	common/usb_storage.c
 F:	include/usb.h
+
+USB TCPM
+M:	Sebastian Reichel <sebastian.reichel@collabora.com>
+S:	Maintained
+F:	cmd/tcpm.c
+F:	doc/usage/cmd/tcpm.rst
+F:	drivers/usb/tcpm/
+F:	include/usb/pd.h
+F:	include/usb/tcpm.h
 
 USB xHCI
 M:	Bin Meng <bmeng.cn@gmail.com>
