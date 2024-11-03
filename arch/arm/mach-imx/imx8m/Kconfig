@@ -199,6 +199,12 @@ config TARGET_IMX8MP_DEBIX_MODEL_A
 	select SUPPORT_SPL
 	imply OF_UPSTREAM
 
+config TARGET_IMX8MP_DEBIX_MODEL_A_4G
+	bool "Polyhex i.MX8M Plus Debix Model A SBC with 4GB LPDDR"
+	select IMX8MP
+	select IMX8M_LPDDR4
+	select SUPPORT_SPL
+
 config TARGET_IMX8MP_DH_DHCOM_PDK2
 	bool "DH electronics DHCOM Premium Developer Kit (2) i.MX8M Plus"
 	select IMX8MP
