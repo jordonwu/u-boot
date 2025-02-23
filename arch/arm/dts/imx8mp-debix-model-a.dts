@@ -256,6 +256,8 @@
 
 /* SD Card */
 &usdhc2 {
+	assigned-clocks = <&clk IMX8MP_CLK_USDHC2>;
+	assigned-clock-rates = <400000000>;
 	pinctrl-names = "default", "state_100mhz", "state_200mhz";
 	pinctrl-0 = <&pinctrl_usdhc2>, <&pinctrl_usdhc2_gpio>;
 	pinctrl-1 = <&pinctrl_usdhc2_100mhz>, <&pinctrl_usdhc2_gpio>;
@@ -419,6 +421,7 @@
 			MX8MP_IOMUXC_SD2_DATA1__USDHC2_DATA1				0x1d0
 			MX8MP_IOMUXC_SD2_DATA2__USDHC2_DATA2				0x1d0
 			MX8MP_IOMUXC_SD2_DATA3__USDHC2_DATA3				0x1d0
+			MX8MP_IOMUXC_GPIO1_IO04__USDHC2_VSELECT				0xc0
 		>;
 	};
 
@@ -430,6 +433,7 @@
 			MX8MP_IOMUXC_SD2_DATA1__USDHC2_DATA1				0x1d4
 			MX8MP_IOMUXC_SD2_DATA2__USDHC2_DATA2				0x1d4
 			MX8MP_IOMUXC_SD2_DATA3__USDHC2_DATA3				0x1d4
+			MX8MP_IOMUXC_GPIO1_IO04__USDHC2_VSELECT				0xc0
 		>;
 	};
 
@@ -441,6 +445,7 @@
 			MX8MP_IOMUXC_SD2_DATA1__USDHC2_DATA1				0x1d6
 			MX8MP_IOMUXC_SD2_DATA2__USDHC2_DATA2				0x1d6
 			MX8MP_IOMUXC_SD2_DATA3__USDHC2_DATA3				0x1d6
+			MX8MP_IOMUXC_GPIO1_IO04__USDHC2_VSELECT				0xc0
 		>;
 	};
 
