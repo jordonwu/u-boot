@@ -11,6 +11,7 @@
 #include <linux/bitfield.h>
 
 #define PHY_ID_YT8511				0x0000010a
+#define PHY_ID_YT8521				0x0000011a
 #define PHY_ID_YT8531				0x4f51e91b
 #define PHY_ID_YT8821				0x4f51ea19
 #define PHY_ID_MASK				GENMASK(31, 0)
@@ -57,6 +58,17 @@
 #define YT8511_DELAY_GE_TX_DIS	(0x2 << 4)
 #define YT8511_DELAY_FE_TX_EN	(0xf << 12)
 #define YT8511_DELAY_FE_TX_DIS	(0x2 << 12)
+
+#define YT8521_SCR_SYNCE_ENABLE		BIT(5)
+/* 1b0 output 25m clock
+ * 1b1 output 125m clock  *default*
+ */
+#define YT8521_SCR_CLK_FRE_SEL_125M		BIT(3)
+#define YT8521_SCR_CLK_SRC_MASK		GENMASK(2, 1)
+#define YT8521_SCR_CLK_SRC_PLL_125M		0
+#define YT8521_SCR_CLK_SRC_UTP_RX		1
+#define YT8521_SCR_CLK_SRC_SDS_RX		2
+#define YT8521_SCR_CLK_SRC_REF_25M		3
 
 #define YT8531_SCR_SYNCE_ENABLE		BIT(6)
 /* 1b0 output 25m clock   *default*
@@ -640,6 +652,73 @@ static int yt8531_set_ds(struct phy_device *phydev)
 	return 0;
 }
 
+static int yt8521_config(struct phy_device *phydev)
+{
+		struct ytphy_plat_priv	*priv = phydev->priv;
+		u16 mask, val;
+		int ret;
+
+		ret = genphy_config_aneg(phydev);
+		if (ret < 0)
+			return ret;
+
+		ytphy_dt_parse(phydev);
+		switch (priv->clk_out_frequency) {
+		case YTPHY_DTS_OUTPUT_CLK_DIS:
+					mask = YT8521_SCR_SYNCE_ENABLE;
+					val = 0;
+					break;
+		case YTPHY_DTS_OUTPUT_CLK_25M:
+					mask = YT8521_SCR_SYNCE_ENABLE |
+							YT8521_SCR_CLK_SRC_MASK |
+							YT8521_SCR_CLK_FRE_SEL_125M;
+					val = YT8521_SCR_SYNCE_ENABLE |
+					      FIELD_PREP(YT8521_SCR_CLK_SRC_MASK,
+							 YT8521_SCR_CLK_SRC_REF_25M);
+					break;
+		case YTPHY_DTS_OUTPUT_CLK_125M:
+					mask = YT8521_SCR_SYNCE_ENABLE |
+							YT8521_SCR_CLK_SRC_MASK |
+							YT8521_SCR_CLK_FRE_SEL_125M;
+					val = YT8521_SCR_SYNCE_ENABLE |
+					      YT8521_SCR_CLK_FRE_SEL_125M |
+					      FIELD_PREP(YT8521_SCR_CLK_SRC_MASK,
+							 YT8521_SCR_CLK_SRC_PLL_125M);
+					break;
+		default:
+					pr_warn("Freq err:%u\n", priv->clk_out_frequency);
+						return -EINVAL;
+		}
+
+		ret = ytphy_modify_ext(phydev, YTPHY_SYNCE_CFG_REG, mask, val);
+		if (ret < 0)
+			return ret;
+
+		ret = ytphy_rgmii_clk_delay_config(phydev);
+		if (ret < 0)
+			return ret;
+
+		if (priv->flag & AUTO_SLEEP_DISABLED) {
+				/* disable auto sleep */
+			ret = ytphy_modify_ext(phydev,
+					       YT8531_EXTREG_SLEEP_CONTROL1_REG,
+					       YT8531_ESC1R_SLEEP_SW, 0);
+			if (ret < 0)
+				return ret;
+		}
+
+		if (priv->flag & KEEP_PLL_ENABLED) {
+				/* enable RXC clock when no wire plug */
+			ret = ytphy_modify_ext(phydev,
+					       YT8531_CLOCK_GATING_REG,
+					       YT8531_CGR_RX_CLK_EN, 0);
+			if (ret < 0)
+				return ret;
+		}
+
+		return 0;
+}
+
 static int yt8531_config(struct phy_device *phydev)
 {
 	struct ytphy_plat_priv	*priv = phydev->priv;
@@ -1122,6 +1201,17 @@ U_BOOT_PHY_DRIVER(motorcomm8511) = {
 	.config        = &yt8511_config,
 	.startup       = &genphy_startup,
 	.shutdown      = &genphy_shutdown,
+};
+
+U_BOOT_PHY_DRIVER(motorcomm8521) = {
+	.name		   = "YT8521 Gigabit Ethernet",
+	.uid		   = PHY_ID_YT8521,
+	.mask		   = PHY_ID_MASK,
+	.features	   = PHY_GBIT_FEATURES,
+	.probe		   = &yt8531_probe,
+	.config		   = &yt8521_config,
+	.startup	   = &yt8531_startup,
+	.shutdown	   = &genphy_shutdown,
 };
 
 U_BOOT_PHY_DRIVER(motorcomm8531) = {
